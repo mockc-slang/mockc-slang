@@ -55,19 +55,20 @@ export function findDeclaration(
   context: Context,
   loc: { line: number; column: number }
 ): SourceLocation | null | undefined {
-  const program = parse(code, context)
-  if (!program) {
-    return null
-  }
-  const identifierNode = findIdentifierNode(program, context, loc)
-  if (!identifierNode) {
-    return null
-  }
-  const declarationNode = findDeclarationNode(program, identifierNode)
-  if (!declarationNode || identifierNode === declarationNode) {
-    return null
-  }
-  return declarationNode.loc
+  // const program = parse(code, context)
+  // if (!program) {
+  //   return null
+  // }
+  // const identifierNode = findIdentifierNode(program, context, loc)
+  // if (!identifierNode) {
+  //   return null
+  // }
+  // const declarationNode = findDeclarationNode(program, identifierNode)
+  // if (!declarationNode || identifierNode === declarationNode) {
+  //   return null
+  // }
+  // return declarationNode.loc
+  return null
 }
 
 export function hasDeclaration(
@@ -75,20 +76,20 @@ export function hasDeclaration(
   context: Context,
   loc: { line: number; column: number }
 ): boolean {
-  const program = parse(code, context)
-  if (!program) {
-    return false
-  }
-  const identifierNode = findIdentifierNode(program, context, loc)
-  if (!identifierNode) {
-    return false
-  }
-  const declarationNode = findDeclarationNode(program, identifierNode)
-  if (declarationNode == null || declarationNode.loc == null) {
-    return false
-  }
+  // const program = parse(code, context)
+  // if (!program) {
+  //   return false
+  // }
+  // const identifierNode = findIdentifierNode(program, context, loc)
+  // if (!identifierNode) {
+  //   return false
+  // }
+  // const declarationNode = findDeclarationNode(program, identifierNode)
+  // if (declarationNode == null || declarationNode.loc == null) {
+  //   return false
+  // }
 
-  return true
+  return false
 }
 
 export async function runInContext(

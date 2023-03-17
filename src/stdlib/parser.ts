@@ -489,16 +489,16 @@ function transform(node: es.Node) {
   }
 }
 
-export function parse(x: string, context: Context): Value {
-  const program = sourceParse(x, context)
-  if (context.errors.length > 0) {
-    throw new ParseError(context.errors[0].explain())
-  }
+// export function parse(x: string, context: Context): Value {
+//   const program = sourceParse(x, context)
+//   if (context.errors.length > 0) {
+//     throw new ParseError(context.errors[0].explain())
+//   }
 
-  if (program !== undefined) {
-    return transform(program)
-  } else {
-    unreachable()
-    throw new ParseError('Invalid parse')
-  }
-}
+//   if (program !== undefined) {
+//     return transform(program)
+//   } else {
+//     unreachable()
+//     throw new ParseError('Invalid parse')
+//   }
+// }

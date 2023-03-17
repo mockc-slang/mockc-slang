@@ -381,3 +381,183 @@ export type TypeEnvironment = {
   declKindMap: Map<string, AllowedDeclarations>
   typeAliasMap: Map<string, Type>
 }[]
+
+export type Command =
+  | Node
+  | DeclarationExpression
+  | DeclarationInstruction
+  | LambdaExpression
+  | BranchInstruction
+  | BinaryOpInstruction
+  | PopInstruction
+
+export type DeclarationExpression = {
+  tag: 'DeclarationExpression'
+  sym: string
+  expr: Command
+}
+
+export type DeclarationInstruction = {
+  tag: 'DeclarationInstruction'
+  sym: string
+}
+
+export type LambdaExpression = {
+  tag: 'LambdaExpression'
+  prms: Command[]
+  body: Command
+}
+
+export type BranchInstruction = {
+  tag: 'BranchInstruction'
+  cons: Command
+  alt: Command
+}
+
+export type BinaryOpInstruction = {
+  tag: 'BinaryOpInstruction'
+  sym: string
+}
+
+export type PopInstruction = {
+  tag: 'Pop'
+}
+
+export type Node =
+  | CompilationUnitNode
+  | TranslationUnitNode
+  | ExternalDeclarationNode
+  | FunctionDefinitionNode
+  | DeclarationNode
+  | TypeSpecifierNode
+  | InitDeclaratorNode
+  | DeclaratorNode
+  | DirectDeclaratorNode
+  | InitializerNode
+  | AssignmentExpressionNode
+  | ExpressionNode
+  | CompoundStatementNode
+  | ParameterDeclarationNode
+  | ParameterListNode
+
+export type ExpressionNode =
+  | ConditionalExpressionNode
+  | BinaryOpExpressionNode
+  | NumberNode
+  | StringLiteralNode
+  | CharacterLiteralNode
+  | ExpressionListNode
+
+export type StatementNode = ExpressionNode
+
+export type CompilationUnitNode = {
+  tag: 'CompilationUnit'
+  translationUnit?: TranslationUnitNode
+}
+
+export type TranslationUnitNode = {
+  tag: 'TranslationUnit'
+  externalDeclarations: ExternalDeclarationNode[]
+}
+
+export type ExternalDeclarationNode = {
+  tag: 'ExternalDeclaration'
+  functionDefinition?: FunctionDefinitionNode
+  declaration?: DeclarationNode
+}
+
+export type FunctionDefinitionNode = {
+  tag: 'FunctionDefinition'
+  type?: string
+  declarator: DeclaratorNode
+  compoundStatement: CompoundStatementNode
+}
+
+export type DeclarationNode = {
+  tag: 'Declaration'
+  type: string
+  identifier: string
+  initializer?: InitializerNode
+}
+
+export type TypeSpecifierNode = {
+  tag: 'TypeSpecifier'
+  type: string // TODO: Refactor to enum or something more extendable
+}
+
+export type InitDeclaratorNode = {
+  tag: 'InitDeclarator'
+  identifier: string
+  initializer?: InitializerNode
+}
+
+export type CompoundStatementNode = {
+  tag: 'CompoundStatement'
+  statements: (DeclarationNode | StatementNode)[]
+}
+
+export type DeclaratorNode = {
+  tag: 'Declarator'
+  directDeclarator: DirectDeclaratorNode
+}
+
+export type DirectDeclaratorNode = {
+  tag: 'DirectDeclarator'
+  identifier: string
+  parameters?: ParameterDeclarationNode[]
+}
+
+export type ParameterListNode = {
+  tag: 'ParameterList'
+  parameters: ParameterDeclarationNode[]
+}
+
+export type ParameterDeclarationNode = {
+  tag: 'ParameterDeclaration'
+  type: string
+  declarator: DeclaratorNode
+}
+
+export type InitializerNode = {
+  tag: 'Initializer'
+  expr?: AssignmentExpressionNode
+}
+
+export type AssignmentExpressionNode = {
+  tag: 'AssignmentExpression'
+  expr?: ExpressionNode
+}
+
+export type ConditionalExpressionNode = {
+  tag: 'ConditionalExpression'
+  pred: ExpressionNode
+  cons: ExpressionNode
+  alt: ExpressionNode
+}
+
+export type NumberNode = {
+  tag: 'Number'
+  val: number
+}
+
+export type StringLiteralNode = {
+  tag: 'StringLiteral'
+  val: string
+}
+
+export type CharacterLiteralNode = {
+  tag: 'CharacterLiteral'
+  val: string
+}
+
+export type ExpressionListNode = {
+  tag: 'ExpressionList'
+  exprs: ExpressionNode[]
+}
+
+export type BinaryOpExpressionNode = {
+  tag: 'BinaryOpExpression'
+  sym: string
+  leftExpr: ExpressionNode
+  rightExpr: ExpressionNode
+}
