@@ -253,7 +253,7 @@ const microcode = {
   },
 
   TranslationUnit: (cmd: Command, A: Command[], S: Value[], E: Object[]) => {
-    let externalDeclarationCmds: Command[] = []
+    const externalDeclarationCmds: Command[] = []
     const { externalDeclarations } = cmd as TranslationUnitNode
     externalDeclarations.forEach(node => {
       externalDeclarationCmds.push(node)
@@ -361,7 +361,7 @@ const microcode = {
   },
 
   ExpressionList: (cmd: Command, A: Command[], S: Value[], E: Object[]) => {
-    let expressionListCmds: Command[] = []
+    const expressionListCmds: Command[] = []
     const { exprs } = cmd as ExpressionListNode
     exprs.forEach(node => {
       expressionListCmds.push(node)
@@ -387,9 +387,9 @@ export function* evaluate(node: Node, context: Context) {
   // yield* leave(context)
   // return result
   const step_limit = 1000000
-  let A: Node[] = [node] // TODO: not sure if need to be wrapped with block. see how to impl environment
-  let S: Value[] = []
-  let E: Object[] = [{}] // TODO: add global environment with builtin functions
+  const A: Node[] = [node] // TODO: not sure if need to be wrapped with block. see how to impl environment
+  const S: Value[] = []
+  const E: Object[] = [{}] // TODO: add global environment with builtin functions
   let i = 0
 
   while (i < step_limit) {
