@@ -1,0 +1,8 @@
+version: 2
+updates:
+- package-ecosystem: npm
+  directory: "/"
+  schedule:
+    interval: monthly
+    time: "07:00"
+  open-pull-requests-limit: 0 # disabled for `renovate` migration (might switch back in the future)
