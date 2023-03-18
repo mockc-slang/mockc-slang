@@ -1,6 +1,6 @@
-# calc-slang
+# mockc-slang
 
-Calculator language modified from js-slang.
+Sublanguage of C language.
 
 ## Possible Issues (and manual solutions)
 
@@ -31,13 +31,14 @@ Calculator language modified from js-slang.
 To build,
 
 ```{.}
-$ git clone https://github.com/yangdinglou/calc-slang
-$ cd calc-slang
+$ git clone https://github.com/mockc-slang/mockc-slang
+$ cd mockc-slang
 $ yarn
+$ yarn antlr4ts
 $ yarn build
 ```
 
-To add \"calc-slang\" to your PATH, build it as per the above instructions, then
+To add \"mockc-slang\" to your PATH, build it as per the above instructions, then
 run
 
 ```{.}
@@ -45,19 +46,19 @@ $ cd dist
 $ npm link
 ```
 
-If you do not wish to add \"calc-slang\" to your PATH, replace \"calc-slang\" with
+If you do not wish to add \"mockc-slang\" to your PATH, replace \"mockc-slang\" with
 \"node dist/repl/repl.js\" in the following examples.
 
 To try out _Source_ in a REPL, run
 
 ```{.}
-$ calc-slang -c [chapter] # default: 1
+$ mockc-slang -c [chapter] # default: 1
 ```
 
 You can set additional options:
 
 ```{.}
-Usage: calc-slang [PROGRAM_STRING] [OPTION]
+Usage: mockc-slang [PROGRAM_STRING] [OPTION]
   -h, --help            display this help
   -e, --eval            don't show REPL, only display output of evaluation
 ```
@@ -69,7 +70,7 @@ Currently, valid CHAPTER/VARIANT combinations are:
 Hint: In `bash` you can take the `PROGRAM_STRING` out of a file as follows:
 
 ```{.}
-$ calc-slang -n -e "$(< my_source_program.js)"
+$ mockc-slang -n -e "$(< my_c_program.c)"
 ```
 
 # Documentation
