@@ -1,5 +1,5 @@
 {
-  "name": "calc-slang",
+  "name": "mockc-slang",
   "version": "1.0.10",
   "license": "Apache-2.0",
   "description": "Calc language as a start point for CS4215's project",
@@ -36,10 +36,10 @@
     "dist"
   ],
   "bin": {
-    "calc-slang": "dist/repl/repl.js"
+    "mockc-slang": "dist/repl/repl.js"
   },
   "scripts": {
-    "antlr4ts": "antlr4ts -visitor ./src/lang/Calc.g4",
+    "antlr4ts": "antlr4ts -visitor ./src/lang/MockC.g4",
     "autocomplete": "node ./scripts/updateAutocompleteDocs.js",
     "benchmark": "jest --runInBand --testPathPattern='.*benchmark.*' --testPathIgnorePatterns='/dist/'",
     "build": "yarn tsc --build --force",
