@@ -186,15 +186,13 @@ class ErrorListener implements ANTLRErrorListener<any> {
   public static readonly Instance: ErrorListener = new ErrorListener()
 
   public syntaxError<T>(
-    _recognizer: Recognizer<T, any>, // eslint-disable-line @typescript-eslint/no-unused-vars
-    _offendingSymbol: T, // eslint-disable-line @typescript-eslint/no-unused-vars
-    line: number, // eslint-disable-line @typescript-eslint/no-unused-vars
-    charPositionInLine: number, // eslint-disable-line @typescript-eslint/no-unused-vars
-    msg: string, // eslint-disable-line @typescript-eslint/no-unused-vars
+    _recognizer: Recognizer<T, any>,
+    _offendingSymbol: T,
+    line: number,
+    charPositionInLine: number,
+    msg: string,
     _e: RecognitionException | undefined
   ): void {
-    // eslint-disable-line @typescript-eslint/no-unused-vars
-
     throw new FatalSyntaxError(
       {
         start: {
