@@ -65,7 +65,7 @@ export enum Chapter {
 }
 
 export enum Variant {
-  DEFAULT = 'mockc'
+  DEFAULT = 'calc'
 }
 
 export interface Language {
