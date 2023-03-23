@@ -17,3 +17,6 @@ test-report.html
 
 src/lang/*
 !src/lang/MockC.g4
+
+# ignore test file
+test.c
