@@ -1,5 +1,11 @@
 /* tslint:disable:max-classes-per-file */
-import { CharStreams, CommonTokenStream } from 'antlr4ts'
+import {
+  ANTLRErrorListener,
+  CharStreams,
+  CommonTokenStream,
+  RecognitionException,
+  Recognizer
+} from 'antlr4ts'
 import { ErrorNode } from 'antlr4ts/tree/ErrorNode'
 import { ParseTree } from 'antlr4ts/tree/ParseTree'
 import { RuleNode } from 'antlr4ts/tree/RuleNode'
@@ -175,6 +181,35 @@ export class FatalSyntaxError implements SourceError {
 //     }
 //   }
 // }
+
+class ErrorListener implements ANTLRErrorListener<any> {
+  public static readonly Instance: ErrorListener = new ErrorListener()
+
+  public syntaxError<T>(
+    _recognizer: Recognizer<T, any>, // eslint-disable-line @typescript-eslint/no-unused-vars
+    _offendingSymbol: T, // eslint-disable-line @typescript-eslint/no-unused-vars
+    line: number, // eslint-disable-line @typescript-eslint/no-unused-vars
+    charPositionInLine: number, // eslint-disable-line @typescript-eslint/no-unused-vars
+    msg: string, // eslint-disable-line @typescript-eslint/no-unused-vars
+    _e: RecognitionException | undefined
+  ): void {
+    // eslint-disable-line @typescript-eslint/no-unused-vars
+
+    throw new FatalSyntaxError(
+      {
+        start: {
+          line,
+          column: charPositionInLine
+        },
+        end: {
+          line,
+          column: charPositionInLine + 1
+        }
+      },
+      msg
+    )
+  }
+}
 
 class NodeGenerator implements MockCVisitor<Node> {
   visitCompilationUnit(ctx: CompilationUnitContext): CompilationUnitNode {
@@ -480,7 +515,19 @@ class NodeGenerator implements MockCVisitor<Node> {
     throw new Error('Method not implemented.')
   }
   visitErrorNode(node: ErrorNode): Node {
-    throw new Error('Method not implemented.')
+    throw new FatalSyntaxError(
+      {
+        start: {
+          line: node.symbol.line,
+          column: node.symbol.charPositionInLine
+        },
+        end: {
+          line: node.symbol.line,
+          column: node.symbol.charPositionInLine + 1
+        }
+      },
+      `invalid syntax ${node.text}`
+    )
   }
 }
 
@@ -502,6 +549,7 @@ export function parse(source: string, context: Context) {
     const lexer = new MockCLexer(inputStream)
     const tokenStream = new CommonTokenStream(lexer)
     const parser = new MockCParser(tokenStream)
+    parser.addErrorListener(ErrorListener.Instance)
     parser.buildParseTree = true
     try {
       const tree = parser.compilationUnit()

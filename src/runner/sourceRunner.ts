@@ -60,12 +60,12 @@ export async function sourceRunner(
   }
 
   // Handle preludes
-  if (context.prelude !== null) {
-    const prelude = context.prelude
-    context.prelude = null
-    await sourceRunner(prelude, context, { ...options, isPrelude: true })
-    return sourceRunner(code, context, options)
-  }
+  // if (context.prelude !== null) {
+  //   const prelude = context.prelude
+  //   context.prelude = null
+  //   await sourceRunner(prelude, context, { ...options, isPrelude: true })
+  //   return sourceRunner(code, context, options)
+  // }
 
   return runInterpreter(program, context, theOptions)
 }
