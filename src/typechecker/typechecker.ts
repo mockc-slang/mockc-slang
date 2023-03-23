@@ -1,5 +1,6 @@
-import { ErrorSeverity, ErrorType, Node, SourceError } from '../types'
 import * as es from 'estree'
+
+import { ErrorSeverity, ErrorType, Node, SourceError } from '../types'
 
 type Table = { [key: string]: string }
 
