@@ -1,4 +1,3 @@
-/* tslint:disable:max-classes-per-file */
 import {
   ANTLRErrorListener,
   CharStreams,
@@ -58,6 +57,7 @@ import {
   UnaryOperatorContext
 } from '../lang/MockCParser'
 import { MockCVisitor } from '../lang/MockCVisitor'
+import { checkTyping, FatalTypeError } from '../typechecker/typechecker'
 import {
   AssignmentExpressionNode,
   CompilationUnitNode,
@@ -538,11 +538,6 @@ export function parse(source: string, context: Context) {
   let program: Node | undefined
 
   if (context.variant === 'calc') {
-    // const inputStream = CharStreams.fromString(source)
-    // const lexer = new CalcLexer(inputStream)
-    // const tokenStream = new CommonTokenStream(lexer)
-    // const parser = new CalcParser(tokenStream)
-    // parser.buildParseTree = true
     const inputStream = CharStreams.fromString(source)
     const lexer = new MockCLexer(inputStream)
     const tokenStream = new CommonTokenStream(lexer)
@@ -552,8 +547,9 @@ export function parse(source: string, context: Context) {
     try {
       const tree = parser.compilationUnit()
       program = convertSource(tree)
+      checkTyping(program)
     } catch (error) {
-      if (error instanceof FatalSyntaxError) {
+      if (error instanceof FatalSyntaxError || error instanceof FatalTypeError) {
         context.errors.push(error)
       } else {
         throw error
