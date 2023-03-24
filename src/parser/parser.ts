@@ -1,5 +1,10 @@
-/* tslint:disable:max-classes-per-file */
-import { CharStreams, CommonTokenStream } from 'antlr4ts'
+import {
+  ANTLRErrorListener,
+  CharStreams,
+  CommonTokenStream,
+  RecognitionException,
+  Recognizer
+} from 'antlr4ts'
 import { ErrorNode } from 'antlr4ts/tree/ErrorNode'
 import { ParseTree } from 'antlr4ts/tree/ParseTree'
 import { RuleNode } from 'antlr4ts/tree/RuleNode'
@@ -52,6 +57,7 @@ import {
   UnaryOperatorContext
 } from '../lang/MockCParser'
 import { MockCVisitor } from '../lang/MockCVisitor'
+import { checkTyping, FatalTypeError } from '../typechecker/typechecker'
 import {
   AssignmentExpressionNode,
   CompilationUnitNode,
@@ -175,6 +181,33 @@ export class FatalSyntaxError implements SourceError {
 //     }
 //   }
 // }
+
+class ErrorListener implements ANTLRErrorListener<any> {
+  public static readonly Instance: ErrorListener = new ErrorListener()
+
+  public syntaxError<T>(
+    _recognizer: Recognizer<T, any>,
+    _offendingSymbol: T,
+    line: number,
+    charPositionInLine: number,
+    msg: string,
+    _e: RecognitionException | undefined
+  ): void {
+    throw new FatalSyntaxError(
+      {
+        start: {
+          line,
+          column: charPositionInLine
+        },
+        end: {
+          line,
+          column: charPositionInLine + 1
+        }
+      },
+      msg
+    )
+  }
+}
 
 class NodeGenerator implements MockCVisitor<Node> {
   visitCompilationUnit(ctx: CompilationUnitContext): CompilationUnitNode {
@@ -480,7 +513,19 @@ class NodeGenerator implements MockCVisitor<Node> {
     throw new Error('Method not implemented.')
   }
   visitErrorNode(node: ErrorNode): Node {
-    throw new Error('Method not implemented.')
+    throw new FatalSyntaxError(
+      {
+        start: {
+          line: node.symbol.line,
+          column: node.symbol.charPositionInLine
+        },
+        end: {
+          line: node.symbol.line,
+          column: node.symbol.charPositionInLine + 1
+        }
+      },
+      `invalid syntax ${node.text}`
+    )
   }
 }
 
@@ -493,21 +538,18 @@ export function parse(source: string, context: Context) {
   let program: Node | undefined
 
   if (context.variant === 'calc') {
-    // const inputStream = CharStreams.fromString(source)
-    // const lexer = new CalcLexer(inputStream)
-    // const tokenStream = new CommonTokenStream(lexer)
-    // const parser = new CalcParser(tokenStream)
-    // parser.buildParseTree = true
     const inputStream = CharStreams.fromString(source)
     const lexer = new MockCLexer(inputStream)
     const tokenStream = new CommonTokenStream(lexer)
     const parser = new MockCParser(tokenStream)
+    parser.addErrorListener(ErrorListener.Instance)
     parser.buildParseTree = true
     try {
       const tree = parser.compilationUnit()
       program = convertSource(tree)
+      checkTyping(program)
     } catch (error) {
-      if (error instanceof FatalSyntaxError) {
+      if (error instanceof FatalSyntaxError || error instanceof FatalTypeError) {
         context.errors.push(error)
       } else {
         throw error
