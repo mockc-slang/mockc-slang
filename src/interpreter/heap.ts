@@ -288,11 +288,11 @@ class Heap {
   static BlockframeSize = 2
 
   allocateBlockframe(env: number) {
-    const frame_index = this.free
+    const frameIndex = this.free
     this.free += Heap.BlockframeSize
-    this.setTaggedNaNAtIndex(frame_index, Heap.BlockframeTag)
-    this.setWordAtIndex(frame_index + Heap.BlockframeEnvironmentOffset, env)
-    return this.makeAddress(frame_index)
+    this.setTaggedNaNAtIndex(frameIndex, Heap.BlockframeTag)
+    this.setWordAtIndex(frameIndex + Heap.BlockframeEnvironmentOffset, env)
+    return this.makeAddress(frameIndex)
   }
 
   getBlockgrameEnvironment(address: number) {
@@ -312,12 +312,12 @@ class Heap {
   static CallframeSize = 3
 
   allocateCallframe(env: number, pc: number) {
-    const frame_index = this.free
+    const frameIndex = this.free
     this.free += Heap.CallframeSize
-    this.setTaggedNaNAtIndex(frame_index, Heap.CallframeTag)
-    this.setWordAtIndex(frame_index + Heap.CallframeEnvironmentOffset, env)
-    this.setWordAtIndex(frame_index + Heap.CallframePcOffset, pc)
-    return this.makeAddress(frame_index)
+    this.setTaggedNaNAtIndex(frameIndex, Heap.CallframeTag)
+    this.setWordAtIndex(frameIndex + Heap.CallframeEnvironmentOffset, env)
+    this.setWordAtIndex(frameIndex + Heap.CallframePcOffset, pc)
+    return this.makeAddress(frameIndex)
   }
 
   getCallframeEnvironment(address: number) {
@@ -341,37 +341,37 @@ class Heap {
   // size is number of words to be reserved
   // for values
   heap_allocate_Frame(size: number) {
-    const frame_index = this.free
+    const frameIndex = this.free
     this.free += Heap.FrameValuesOffset + size
-    this.setTaggedNaNAtIndex(frame_index, Heap.FrameTag)
-    this.setWordAtIndex(frame_index + Heap.FrameSizeOffset, size)
-    return this.makeAddress(frame_index)
+    this.setTaggedNaNAtIndex(frameIndex, Heap.FrameTag)
+    this.setWordAtIndex(frameIndex + Heap.FrameSizeOffset, size)
+    return this.makeAddress(frameIndex)
   }
 
-  getFrameSize(frame_address: number) {
-    return this.getWordAtIndex(this.getIndexFromAddress(frame_address) + Heap.FrameSizeOffset)
+  getFrameSize(frameAddress: number) {
+    return this.getWordAtIndex(this.getIndexFromAddress(frameAddress) + Heap.FrameSizeOffset)
   }
 
-  getFrameValue(frame_address: number, value_index: number) {
+  getFrameValue(frameAddress: number, valueIndex: number) {
     return this.getWordAtIndex(
-      this.getIndexFromAddress(frame_address) + Heap.FrameValuesOffset + value_index
+      this.getIndexFromAddress(frameAddress) + Heap.FrameValuesOffset + valueIndex
     )
   }
 
-  setFrameValue(frame_address: number, value_index: number, value: number) {
+  setFrameValue(frameAddress: number, valueIndex: number, value: number) {
     this.setWordAtIndex(
-      this.getIndexFromAddress(frame_address) + Heap.FrameValuesOffset + value_index,
+      this.getIndexFromAddress(frameAddress) + Heap.FrameValuesOffset + valueIndex,
       value
     )
   }
 
-  frameDisplay(frame_address: number) {
+  frameDisplay(frameAddress: number) {
     console.log('Frame:')
-    const size = this.getFrameSize(frame_address)
+    const size = this.getFrameSize(frameAddress)
     console.log('frame size:', size)
     for (let i = 0; i < size; i++) {
       console.log('value index:', i)
-      const value = this.getFrameValue(frame_address, i)
+      const value = this.getFrameValue(frameAddress, i)
       console.log('value:', value)
       console.log('value word:', Heap.wordToString(value))
     }
@@ -395,40 +395,40 @@ class Heap {
   // TODO: check where is this used in interpreter
   // heap_empty_Environment = this.allocateEnvironment(0)
 
-  getEnvironmentSize(env_address: number) {
-    return this.getWordAtIndex(this.getIndexFromAddress(env_address) + Heap.EnvironmentSizeOffset)
+  getEnvironmentSize(envAddress: number) {
+    return this.getWordAtIndex(this.getIndexFromAddress(envAddress) + Heap.EnvironmentSizeOffset)
   }
 
   // access environment given by address
   // using a "position", i.e. a pair of
   // frame index and value index
-  // TODO: no such thing as "instr.pos" or value_index in explicit control eval? check how to impl this
-  getEnvironmentValue(env_address: number, position: number[]) {
-    const [frame_index, value_index] = position
-    const frame_address = this.getWordAtIndex(
-      this.getIndexFromAddress(env_address) + Heap.EnvironmentFramesOffset + frame_index
+  // TODO: no such thing as "instr.pos" or valueIndex in explicit control eval? check how to impl this
+  getEnvironmentValue(envAddress: number, position: number[]) {
+    const [frameIndex, valueIndex] = position
+    const frameAddress = this.getWordAtIndex(
+      this.getIndexFromAddress(envAddress) + Heap.EnvironmentFramesOffset + frameIndex
     )
-    return this.getFrameValue(frame_address, value_index)
+    return this.getFrameValue(frameAddress, valueIndex)
   }
 
-  setEnvironmentValue(env_address: number, position: number[], value: number) {
-    const [frame_index, value_index] = position
-    const frame_address = this.getWordAtIndex(
-      this.getIndexFromAddress(env_address) + Heap.EnvironmentFramesOffset + frame_index
+  setEnvironmentValue(envAddress: number, position: number[], value: number) {
+    const [frameIndex, valueIndex] = position
+    const frameAddress = this.getWordAtIndex(
+      this.getIndexFromAddress(envAddress) + Heap.EnvironmentFramesOffset + frameIndex
     )
-    this.setFrameValue(frame_address, value_index, value)
+    this.setFrameValue(frameAddress, valueIndex, value)
   }
 
   // get the whole frame at given frame index
-  getEnvironmentFrame(env_address: number, frame_index: number) {
+  getEnvironmentFrame(envAddress: number, frameIndex: number) {
     return this.getWordAtIndex(
-      this.getIndexFromAddress(env_address) + Heap.EnvironmentFramesOffset + frame_index
+      this.getIndexFromAddress(envAddress) + Heap.EnvironmentFramesOffset + frameIndex
     )
   }
   // set the whole frame at given frame index
-  setEnvironmentFrame(env_address: number, frame_index: number, frame: number) {
+  setEnvironmentFrame(envAddress: number, frameIndex: number, frame: number) {
     return this.setWordAtIndex(
-      this.getIndexFromAddress(env_address) + Heap.EnvironmentFramesOffset + frame_index,
+      this.getIndexFromAddress(envAddress) + Heap.EnvironmentFramesOffset + frameIndex,
       frame
     )
   }
@@ -438,25 +438,25 @@ class Heap {
   // copy the frame address to the new environment.
   // enter the address of the new frame to end
   // of the new environment
-  environmentExtend(frame_address: number, env_address: number) {
-    const old_size = this.getEnvironmentSize(env_address)
-    const new_env_address = this.allocateEnvironment(old_size + 1)
+  environmentExtend(frameAddress: number, envAddress: number) {
+    const old_size = this.getEnvironmentSize(envAddress)
+    const newEnvAddress = this.allocateEnvironment(old_size + 1)
     let i
     for (i = 0; i < old_size; i++) {
-      this.setEnvironmentFrame(new_env_address, i, this.getEnvironmentFrame(env_address, i))
+      this.setEnvironmentFrame(newEnvAddress, i, this.getEnvironmentFrame(envAddress, i))
     }
-    this.setEnvironmentFrame(new_env_address, i, frame_address)
-    return new_env_address
+    this.setEnvironmentFrame(newEnvAddress, i, frameAddress)
+    return newEnvAddress
   }
 
   // for debuggging: display environment
-  environmentDisplay(env_address: number) {
-    const size = this.getEnvironmentSize(env_address)
+  environmentDisplay(envAddress: number) {
+    const size = this.getEnvironmentSize(envAddress)
     console.log('Environment:')
     console.log('environment size:', size)
     for (let i = 0; i < size; i++) {
       console.log('frame index:', i)
-      const frame = this.getEnvironmentFrame(env_address, i)
+      const frame = this.getEnvironmentFrame(envAddress, i)
       this.frameDisplay(frame)
     }
   }
