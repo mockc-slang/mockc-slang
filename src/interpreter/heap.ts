@@ -229,25 +229,23 @@ class Heap {
     return view.getInt32(4)
   }
 
-  // TODO: complete this when other functions migrate finish
-  // wordToCValue = (x: number) =>
-  //   // Heap.isUndefined(x)
-  //   //   ? '<undefined>'
-  //   Heap.isUnassigned(x)
-  //     ? '<unassigned>'
-  //     : Heap.isNull(x)
-  //     ? 'NULL'
-  //     : // : is_Pair(x)
-  //     // ? [word_to_JS_value(heap_get_head(x)), word_to_JS_value(heap_get_tail(x))]
-  //     Heap.isAddress(x)
-  //     ? String(this.wordToCValue(this.addressDeref(x)))
-  //     : Heap.isClosure(x)
-  //     ? '<closure>'
-  //     : Heap.isBuiltin(x)
-  //     ? '<builtin>'
-  //     : String(isNaN(x))
-  //     ? Heap.wordToString(x)
-  //     : String(x)
+  wordToCValue(x: number): string {
+    return this.isUndefined(x)
+      ? '<undefined>'
+      : this.isUnassigned(x)
+      ? '<unassigned>'
+      : this.isNull(x)
+      ? 'NULL'
+      : this.isAddress(x)
+      ? String(this.wordToCValue(this.addressDeref(x)))
+      : this.isClosure(x)
+      ? '<closure>'
+      : this.isBuiltin(x)
+      ? '<builtin>'
+      : String(isNaN(x))
+      ? Heap.wordToString(x)
+      : String(x)
+  }
 
   // closure
 
@@ -432,6 +430,7 @@ class Heap {
       frame
     )
   }
+
   // extend a given environment by a new frame:
   // create a new environment that is bigger by 1
   // frame slot than the given environment.
