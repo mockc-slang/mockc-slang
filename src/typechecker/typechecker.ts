@@ -38,7 +38,7 @@ function checkSymType(
               column: 0
             }
           },
-          `Binary op must be int int: instead found ${leftExprType} and ${rightExprType}`
+          `+ operator must be applied on int int: instead found ${leftExprType} and ${rightExprType}`
         )
       }
       return 'int'
@@ -117,23 +117,21 @@ function check(node: Node | undefined, E: TypeEnvironment): string | undefined {
       const consType = check(cons, E)
       const altType = check(alt, E)
       if (consType != altType) {
-        if (predType != 'int') {
-          throw new FatalTypeError(
-            {
-              start: {
-                line: 0,
-                column: 0
-              },
-              end: {
-                line: 0,
-                column: 0
-              }
+        throw new FatalTypeError(
+          {
+            start: {
+              line: 0,
+              column: 0
             },
-            `Conditional expression return types must be the same: instead found ${cons} and ${alt}`
-          )
-        }
+            end: {
+              line: 0,
+              column: 0
+            }
+          },
+          `Conditional expression return types must be the same: instead found ${cons} and ${alt}`
+        )
       }
-      return check(expr, E)
+      return consType
 
     case 'ExpressionList':
       const { exprs } = node
