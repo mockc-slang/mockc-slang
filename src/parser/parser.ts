@@ -70,10 +70,12 @@ import {
   ErrorType,
   ExpressionListNode,
   ExpressionNode,
+  ExpressionStatementNode,
   ExternalDeclarationNode,
   FunctionDefinitionNode,
   InitDeclaratorNode,
   InitializerNode,
+  JumpStatementNode,
   Node,
   ParameterDeclarationNode,
   ParameterListNode,
@@ -493,16 +495,49 @@ class NodeGenerator implements MockCVisitor<Node> {
   }
 
   visitStatement(ctx: StatementContext): StatementNode {
-    return ctx.expressionStatement()?.accept(this) as ExpressionNode
+    const expressionStatement = ctx.expressionStatement()
+    if (expressionStatement) {
+      return expressionStatement.accept(this) as ExpressionStatementNode
+    }
+    const compoundStatement = ctx.compoundStatement()
+    if (compoundStatement) {
+      return compoundStatement.accept(this) as ExpressionStatementNode
+    }
+    const selectionStatement = ctx.selectionStatement()
+    if (selectionStatement) {
+      return selectionStatement.accept(this) as ExpressionStatementNode
+    }
+    const iterationStatement = ctx.iterationStatement()
+    if (iterationStatement) {
+      return iterationStatement.accept(this) as ExpressionStatementNode
+    }
+
+    return ctx.jumpStatement()?.accept(this) as ExpressionStatementNode
   }
 
-  visitExpressionStatement(ctx: ExpressionStatementContext): ExpressionNode {
-    return ctx.expressionList()?.accept(this) as ExpressionListNode
+  visitExpressionStatement(ctx: ExpressionStatementContext): ExpressionStatementNode {
+    return {
+      tag: 'ExpressionStatement',
+      exprs: (ctx.expressionList()?.accept(this) || []) as ExpressionListNode
+    }
   }
 
   visitSelectionStatement?: ((ctx: SelectionStatementContext) => Node) | undefined
   visitIterationStatement?: ((ctx: IterationStatementContext) => Node) | undefined
-  visitJumpStatement?: ((ctx: JumpStatementContext) => Node) | undefined
+
+  visitJumpStatement(ctx: JumpStatementContext): JumpStatementNode {
+    const expressionList = ctx.expressionList()
+    if (expressionList) {
+      return {
+        tag: 'ReturnStatement',
+        exprs: expressionList.accept(this) as ExpressionListNode
+      }
+    }
+    return {
+      tag: 'BreakStatement'
+    }
+  }
+
   visit(tree: ParseTree): Node {
     throw new Error('Method not implemented.')
   }
