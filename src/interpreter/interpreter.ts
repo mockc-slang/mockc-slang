@@ -221,11 +221,11 @@ import * as rttc from '../utils/rttc'
 // }
 // // tslint:enable:object-literal-shorthand
 
-const declare = (sym: string, val: Value, E: Object[]) => {
-  if (E[0].hasOwnProperty(sym)) {
-    throw new Error('already declared')
-  }
-  E[0][sym] = val
+const declare = (sym: string, val: Value, heap: Heap) => {
+  // if (E[0].hasOwnProperty(sym)) {
+  //   throw new Error('already declared')
+  // }
+  // E[0][sym] = val
 }
 
 const applyBinaryOp = (sym: string, leftOperand: Value, rightOperand: Value): Value =>
@@ -238,8 +238,8 @@ const binaryOpMicrocode = {
   '-': (x: number, y: number) => x - y
 }
 
-const pop = (S: Value[]) => {
-  const val = S.pop()
+const pop = (stash: Value[]) => {
+  const val = stash.pop()
   if (!val) {
     throw Error('internal error: expected value from stack')
   }
@@ -247,12 +247,12 @@ const pop = (S: Value[]) => {
 }
 
 const microcode = {
-  CompilationUnit: (cmd: Command, A: Command[], S: Value[], E: Object[]) => {
+  CompilationUnit: (cmd: Command, agenda: Command[], stash: Value[], heap: Heap) => {
     const { translationUnit } = cmd as CompilationUnitNode
-    if (translationUnit) A.push(translationUnit)
+    if (translationUnit) agenda.push(translationUnit)
   },
 
-  TranslationUnit: (cmd: Command, A: Command[], S: Value[], E: Object[]) => {
+  TranslationUnit: (cmd: Command, agenda: Command[], stash: Value[], heap: Heap) => {
     const externalDeclarationCmds: Command[] = []
     const { externalDeclarations } = cmd as TranslationUnitNode
     externalDeclarations.forEach(node => {
@@ -261,14 +261,14 @@ const microcode = {
     })
     externalDeclarationCmds.pop()
     externalDeclarationCmds.reverse()
-    A.push(...externalDeclarationCmds)
+    agenda.push(...externalDeclarationCmds)
   },
 
-  FunctionDefinition: (cmd: Command, A: Command[], S: Value[], E: Object[]) => {
+  FunctionDefinition: (cmd: Command, agenda: Command[], stash: Value[], heap: Heap) => {
     const { type, declarator, compoundStatement } = cmd as FunctionDefinitionNode
     const { directDeclarator } = declarator // TODO: handle pointer
     const { identifier, parameterList } = directDeclarator
-    A.push({ tag: 'Number', val: 0 }, popInstruction, {
+    agenda.push({ tag: 'Number', val: 0 }, popInstruction, {
       tag: 'DeclarationExpression',
       sym: identifier,
       expr: {
@@ -279,19 +279,19 @@ const microcode = {
     })
   },
 
-  LambdaExpression: (cmd: Command, A: Command[], S: Value[], E: Object[]) => {
+  LambdaExpression: (cmd: Command, agenda: Command[], stash: Value[], heap: Heap) => {
     const { prms, body } = cmd as LambdaExpression
-    S.push({ tag: 'Closure', prms, body, E })
+    stash.push({ tag: 'Closure', prms, body, heap })
   },
 
-  ExternalDeclaration: (cmd: Command, A: Command[], S: Value[], E: Object[]) => {
+  ExternalDeclaration: (cmd: Command, agenda: Command[], stash: Value[], heap: Heap) => {
     const { functionDefinition, declaration } = cmd as ExternalDeclarationNode
     // TODO: handle function definition
-    if (functionDefinition) A.push(functionDefinition)
-    if (declaration) A.push(declaration)
+    if (functionDefinition) agenda.push(functionDefinition)
+    if (declaration) agenda.push(declaration)
   },
 
-  Declaration: (cmd: Command, A: Command[], S: Value[], E: Object[]) => {
+  Declaration: (cmd: Command, agenda: Command[], stash: Value[], heap: Heap) => {
     const type = (cmd as DeclarationNode).type
     const { identifier, initializer } = cmd as DeclarationNode
     if (!initializer) {
@@ -299,7 +299,7 @@ const microcode = {
       return
     }
     if (initializer.expr) {
-      A.push({ tag: 'Number', val: 0 }, popInstruction, {
+      agenda.push({ tag: 'Number', val: 0 }, popInstruction, {
         tag: 'DeclarationExpression',
         sym: identifier,
         expr: initializer.expr
@@ -307,9 +307,9 @@ const microcode = {
     }
   },
 
-  DeclarationExpression: (cmd: Command, A: Command[], S: Value[], E: Object[]) => {
+  DeclarationExpression: (cmd: Command, agenda: Command[], stash: Value[], heap: Heap) => {
     const { sym, expr } = cmd as DeclarationExpression
-    A.push(
+    agenda.push(
       {
         tag: 'DeclarationInstruction',
         sym
@@ -318,22 +318,22 @@ const microcode = {
     )
   },
 
-  DeclarationInstruction: (cmd: Command, A: Command[], S: Value[], E: Object[]) => {
+  DeclarationInstruction: (cmd: Command, agenda: Command[], stash: Value[], heap: Heap) => {
     const { sym } = cmd as DeclarationInstruction
-    declare(sym, S[S.length - 1], E)
+    declare(sym, stash[stash.length - 1], heap)
   },
 
-  AssignmentExpression: (cmd: Command, A: Command[], S: Value[], E: Object[]) => {
+  AssignmentExpression: (cmd: Command, agenda: Command[], stash: Value[], heap: Heap) => {
     // TODO: handle other expression cases
     const { expr } = cmd as AssignmentExpressionNode
     if (expr) {
-      A.push(expr)
+      agenda.push(expr)
     }
   },
 
-  ConditionalExpression: (cmd: Command, A: Command[], S: Value[], E: Object[]) => {
+  ConditionalExpression: (cmd: Command, agenda: Command[], stash: Value[], heap: Heap) => {
     const { pred, cons, alt } = cmd as ConditionalExpressionNode
-    A.push(
+    agenda.push(
       {
         tag: 'BranchInstruction',
         cons,
@@ -343,24 +343,24 @@ const microcode = {
     )
   },
 
-  BranchInstruction: (cmd: Command, A: Command[], S: Value[], E: Object[]) => {
+  BranchInstruction: (cmd: Command, agenda: Command[], stash: Value[], heap: Heap) => {
     const { cons, alt } = cmd as BranchInstruction
-    A.push(pop(S) !== 0 ? cons : alt)
+    agenda.push(pop(stash) !== 0 ? cons : alt)
   },
 
-  BinaryOpExpression: (cmd: Command, A: Command[], S: Value[], E: Object[]) => {
+  BinaryOpExpression: (cmd: Command, agenda: Command[], stash: Value[], heap: Heap) => {
     const { sym, leftExpr, rightExpr } = cmd as BinaryOpExpressionNode
-    A.push({ tag: 'BinaryOpInstruction', sym }, rightExpr, leftExpr)
+    agenda.push({ tag: 'BinaryOpInstruction', sym }, rightExpr, leftExpr)
   },
 
-  BinaryOpInstruction: (cmd: Command, A: Command[], S: Value[], E: Object[]) => {
+  BinaryOpInstruction: (cmd: Command, agenda: Command[], stash: Value[], heap: Heap) => {
     const { sym } = cmd as BinaryOpInstruction
-    const rightOperand = pop(S)
-    const leftOperand = pop(S)
-    S.push(applyBinaryOp(sym, leftOperand, rightOperand))
+    const rightOperand = pop(stash)
+    const leftOperand = pop(stash)
+    stash.push(applyBinaryOp(sym, leftOperand, rightOperand))
   },
 
-  ExpressionList: (cmd: Command, A: Command[], S: Value[], E: Object[]) => {
+  ExpressionList: (cmd: Command, agenda: Command[], stash: Value[], heap: Heap) => {
     const expressionListCmds: Command[] = []
     const { exprs } = cmd as ExpressionListNode
     exprs.forEach(node => {
@@ -369,16 +369,16 @@ const microcode = {
     })
     expressionListCmds.pop()
     expressionListCmds.reverse()
-    A.push(...expressionListCmds)
+    agenda.push(...expressionListCmds)
   },
 
-  Number: (cmd: Command, A: Command[], S: Value[], E: Object[]) => {
+  Number: (cmd: Command, agenda: Command[], stash: Value[], heap: Heap) => {
     const { val } = cmd as NumberNode
-    S.push(val)
+    stash.push(val)
   },
 
-  Pop: (cmd: Command, A: Command[], S: Value[], E: Object[]) => {
-    S.pop()
+  Pop: (cmd: Command, agenda: Command[], stash: Value[], heap: Heap) => {
+    stash.pop()
   }
 }
 
@@ -387,21 +387,23 @@ export function* evaluate(node: Node, context: Context) {
   // yield* leave(context)
   // return result
   const step_limit = 1000000
-  const A: Node[] = [node] // TODO: not sure if need to be wrapped with block. see how to impl environment
-  const S: Value[] = []
-  const E: Object[] = [{}] // TODO: add global environment with builtin functions
+  const agenda: Node[] = [node] // TODO: not sure if need to be wrapped with block. see how to impl environment
+  const stash: Value[] = []
+  const heap: Heap = new Heap(10)
+  const runtimeStack: Value[] = []
   let i = 0
 
   while (i < step_limit) {
-    const cmd = A.pop()
+    const cmd = agenda.pop()
     if (!cmd) break
     if (!microcode.hasOwnProperty(cmd.tag))
       throw new Error('internal error: unknown command ' + cmd.tag)
-    microcode[cmd.tag](cmd, A, S, E)
+    microcode[cmd.tag](cmd, agenda, stash, heap)
     i++
   }
 
   if (i === step_limit) throw new Error('step limit ' + step_limit + ' exceeded')
-  if (S.length > 1 || S.length < 1) throw new Error('internal error: stash must be singleton')
-  return S[0]
+  if (stash.length > 1 || stash.length < 1)
+    throw new Error('internal error: stash must be singleton')
+  return stash[0]
 }
