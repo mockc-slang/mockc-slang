@@ -459,9 +459,10 @@ class NodeGenerator implements MockCVisitor<Node> {
   }
 
   visitInitDeclarator(ctx: InitDeclaratorContext): InitDeclaratorNode {
+    const identifier = ctx.declarator().directDeclarator().IDENTIFIER().text
     return {
       tag: 'InitDeclarator',
-      identifier: ctx.IDENTIFIER().text,
+      identifier,
       initializer: ctx.initializer()?.accept(this) as InitializerNode
     }
   }
@@ -547,6 +548,7 @@ export function parse(source: string, context: Context) {
     try {
       const tree = parser.compilationUnit()
       program = convertSource(tree)
+      // console.log(JSON.stringify(program, undefined, 2), 'final tree')
       checkTyping(program)
     } catch (error) {
       if (error instanceof FatalSyntaxError || error instanceof FatalTypeError) {

@@ -102,7 +102,7 @@ unaryOperator: '&' | '*' | '+' | '-' | '~' | '!';
 parameterList: parameterDeclaration (',' parameterDeclaration)*;
 parameterDeclaration: typeSpecifier declarator;
 declaration: typeSpecifier initDeclarator ';';
-initDeclarator: IDENTIFIER ('=' initializer)?;
+initDeclarator: declarator ('=' initializer)?;
 initializer:
 	assignmentExpression
 	| '{' initializerList '}'
