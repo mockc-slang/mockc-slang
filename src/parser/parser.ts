@@ -262,8 +262,7 @@ class NodeGenerator implements MockCVisitor<Node> {
   visitPointer?: ((ctx: PointerContext) => Node) | undefined
 
   visitDirectDeclarator(ctx: DirectDeclaratorContext): DirectDeclaratorNode {
-    const parameters = (ctx.parameterList()?.accept(this) as ParameterListNode | undefined)
-      ?.parameters
+    const parameters = ctx.parameterList()?.accept(this) as ParameterListNode | undefined
 
     // TODO: Check for function/array declaration
     return {
