@@ -504,7 +504,7 @@ export type DeclaratorNode = {
 export type DirectDeclaratorNode = {
   tag: 'DirectDeclarator'
   identifier: string
-  parameters?: ParameterListNode
+  parameterList: ParameterListNode
 }
 
 export type ParameterListNode = {
