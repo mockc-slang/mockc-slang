@@ -404,7 +404,7 @@ export type DeclarationInstruction = {
 
 export type LambdaExpression = {
   tag: 'LambdaExpression'
-  prms: Command[]
+  prms: Command | undefined
   body: Command
 }
 
@@ -504,7 +504,7 @@ export type DeclaratorNode = {
 export type DirectDeclaratorNode = {
   tag: 'DirectDeclarator'
   identifier: string
-  parameters?: ParameterDeclarationNode[]
+  parameters?: ParameterListNode
 }
 
 export type ParameterListNode = {

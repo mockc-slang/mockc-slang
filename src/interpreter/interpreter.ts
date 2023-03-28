@@ -273,7 +273,7 @@ const microcode = {
       sym: identifier,
       expr: {
         tag: 'LambdaExpression',
-        prms: parameters || [],
+        prms: parameters,
         body: compoundStatement
       }
     })
