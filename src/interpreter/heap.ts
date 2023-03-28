@@ -1,4 +1,4 @@
-class Heap {
+export class Heap {
   static WordSize = 8
   static Mega = 2 ** 20
   view: DataView
