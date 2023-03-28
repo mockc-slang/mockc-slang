@@ -283,12 +283,17 @@ const pop = (stash: Value[]) => {
 
 const microcode = {
   CompilationUnit: (cmd: Command, interpreterContext: InterpreterContext) => {
+    const { agenda } = interpreterContext
+
     const { translationUnit } = cmd as CompilationUnitNode
-    if (translationUnit) interpreterContext.agenda.push(translationUnit)
+    if (translationUnit) agenda.push(translationUnit)
   },
 
   TranslationUnit: (cmd: Command, interpreterContext: InterpreterContext) => {
+    const { agenda } = interpreterContext
+
     const externalDeclarationCmds: Command[] = []
+
     const locals = scanDeclarations(externalDeclarationCmds)
 
     const { externalDeclarations } = cmd as TranslationUnitNode
@@ -298,14 +303,16 @@ const microcode = {
     })
     externalDeclarationCmds.pop()
     externalDeclarationCmds.reverse()
-    interpreterContext.agenda.push(...externalDeclarationCmds)
+    agenda.push(...externalDeclarationCmds)
   },
 
   FunctionDefinition: (cmd: Command, interpreterContext: InterpreterContext) => {
+    const { agenda } = interpreterContext
+
     const { type, declarator, compoundStatement } = cmd as FunctionDefinitionNode
     const { directDeclarator } = declarator // TODO: handle pointer
     const { identifier, parameterList } = directDeclarator
-    interpreterContext.agenda.push({ tag: 'Number', val: 0 }, popInstruction, {
+    agenda.push({ tag: 'Number', val: 0 }, popInstruction, {
       tag: 'DeclarationExpression',
       sym: identifier,
       expr: {
@@ -317,18 +324,24 @@ const microcode = {
   },
 
   LambdaExpression: (cmd: Command, interpreterContext: InterpreterContext) => {
+    const { stash } = interpreterContext
+
     const { prms, body } = cmd as LambdaExpression
-    interpreterContext.stash.push({ tag: 'Closure', prms, body })
+    stash.push({ tag: 'Closure', prms, body })
   },
 
   ExternalDeclaration: (cmd: Command, interpreterContext: InterpreterContext) => {
+    const { agenda, stash } = interpreterContext
+
     const { functionDefinition, declaration } = cmd as ExternalDeclarationNode
     // TODO: handle function definition
-    if (functionDefinition) interpreterContext.agenda.push(functionDefinition)
-    if (declaration) interpreterContext.agenda.push(declaration)
+    if (functionDefinition) agenda.push(functionDefinition)
+    if (declaration) agenda.push(declaration)
   },
 
   Declaration: (cmd: Command, interpreterContext: InterpreterContext) => {
+    const { agenda } = interpreterContext
+
     const type = (cmd as DeclarationNode).type
     const { identifier, initializer } = cmd as DeclarationNode
     if (!initializer) {
@@ -336,7 +349,7 @@ const microcode = {
       return
     }
     if (initializer.expr) {
-      interpreterContext.agenda.push({ tag: 'Number', val: 0 }, popInstruction, {
+      agenda.push({ tag: 'Number', val: 0 }, popInstruction, {
         tag: 'DeclarationExpression',
         sym: identifier,
         expr: initializer.expr
@@ -345,8 +358,10 @@ const microcode = {
   },
 
   DeclarationExpression: (cmd: Command, interpreterContext: InterpreterContext) => {
+    const { agenda } = interpreterContext
+
     const { sym, expr } = cmd as DeclarationExpression
-    interpreterContext.agenda.push(
+    agenda.push(
       {
         tag: 'DeclarationInstruction',
         sym
@@ -356,25 +371,27 @@ const microcode = {
   },
 
   DeclarationInstruction: (cmd: Command, interpreterContext: InterpreterContext) => {
+    const { stash, heap } = interpreterContext
+
     const { sym } = cmd as DeclarationInstruction
-    declare(
-      sym,
-      interpreterContext.stash[interpreterContext.stash.length - 1],
-      interpreterContext.heap
-    )
+    declare(sym, stash[stash.length - 1], heap)
   },
 
   AssignmentExpression: (cmd: Command, interpreterContext: InterpreterContext) => {
+    const { agenda } = interpreterContext
+
     // TODO: handle other expression cases
     const { expr } = cmd as AssignmentExpressionNode
     if (expr) {
-      interpreterContext.agenda.push(expr)
+      agenda.push(expr)
     }
   },
 
   ConditionalExpression: (cmd: Command, interpreterContext: InterpreterContext) => {
+    const { agenda } = interpreterContext
+
     const { pred, cons, alt } = cmd as ConditionalExpressionNode
-    interpreterContext.agenda.push(
+    agenda.push(
       {
         tag: 'BranchInstruction',
         cons,
@@ -385,23 +402,31 @@ const microcode = {
   },
 
   BranchInstruction: (cmd: Command, interpreterContext: InterpreterContext) => {
+    const { agenda, stash } = interpreterContext
+
     const { cons, alt } = cmd as BranchInstruction
-    interpreterContext.agenda.push(pop(interpreterContext.stash) !== 0 ? cons : alt)
+    agenda.push(pop(stash) !== 0 ? cons : alt)
   },
 
   BinaryOpExpression: (cmd: Command, interpreterContext: InterpreterContext) => {
+    const { agenda } = interpreterContext
+
     const { sym, leftExpr, rightExpr } = cmd as BinaryOpExpressionNode
-    interpreterContext.agenda.push({ tag: 'BinaryOpInstruction', sym }, rightExpr, leftExpr)
+    agenda.push({ tag: 'BinaryOpInstruction', sym }, rightExpr, leftExpr)
   },
 
   BinaryOpInstruction: (cmd: Command, interpreterContext: InterpreterContext) => {
+    const { stash } = interpreterContext
+
     const { sym } = cmd as BinaryOpInstruction
-    const rightOperand = pop(interpreterContext.stash)
-    const leftOperand = pop(interpreterContext.stash)
-    interpreterContext.stash.push(applyBinaryOp(sym, leftOperand, rightOperand))
+    const rightOperand = pop(stash)
+    const leftOperand = pop(stash)
+    stash.push(applyBinaryOp(sym, leftOperand, rightOperand))
   },
 
   ExpressionList: (cmd: Command, interpreterContext: InterpreterContext) => {
+    const { agenda } = interpreterContext
+
     const expressionListCmds: Command[] = []
     const { exprs } = cmd as ExpressionListNode
     exprs.forEach(node => {
@@ -410,12 +435,14 @@ const microcode = {
     })
     expressionListCmds.pop()
     expressionListCmds.reverse()
-    interpreterContext.agenda.push(...expressionListCmds)
+    agenda.push(...expressionListCmds)
   },
 
   Number: (cmd: Command, interpreterContext: InterpreterContext) => {
+    const { stash } = interpreterContext
+
     const { val } = cmd as NumberNode
-    interpreterContext.stash.push(val)
+    stash.push(val)
   },
 
   Pop: (cmd: Command, interpreterContext: InterpreterContext) => {
@@ -438,9 +465,11 @@ export function* evaluate(node: Node, context: Context) {
     variableLookupEnv: []
   }
 
+  const { stash, agenda } = interpreterContext
+
   let i = 0
   while (i < step_limit) {
-    const cmd = interpreterContext.agenda.pop()
+    const cmd = agenda.pop()
     if (!cmd) break
     if (!microcode.hasOwnProperty(cmd.tag))
       throw new Error('internal error: unknown command ' + cmd.tag)
@@ -449,7 +478,7 @@ export function* evaluate(node: Node, context: Context) {
   }
 
   if (i === step_limit) throw new Error('step limit ' + step_limit + ' exceeded')
-  if (interpreterContext.stash.length > 1 || interpreterContext.stash.length < 1)
+  if (stash.length > 1 || stash.length < 1)
     throw new Error('internal error: stash must be singleton')
-  return interpreterContext.stash[0]
+  return stash[0]
 }
