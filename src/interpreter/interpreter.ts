@@ -267,7 +267,7 @@ const microcode = {
   FunctionDefinition: (cmd: Command, A: Command[], S: Value[], E: Object[]) => {
     const { type, declarator, compoundStatement } = cmd as FunctionDefinitionNode
     const { directDeclarator } = declarator // TODO: handle pointer
-    const { identifier, parameters } = directDeclarator
+    const { identifier, parameterList: parameters } = directDeclarator
     A.push({ tag: 'Number', val: 0 }, popInstruction, {
       tag: 'DeclarationExpression',
       sym: identifier,
