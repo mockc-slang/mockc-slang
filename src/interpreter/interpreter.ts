@@ -234,7 +234,6 @@ type InterpreterContext = {
 const declare = (sym: string, val: Value, interpreterContext: InterpreterContext) => {
   const { variableLookupEnv, env, heap } = interpreterContext
   const pos = lookupVairable(sym, variableLookupEnv)
-  console.log(pos)
   heap.setEnvironmentValue(env, pos, val)
 }
 
