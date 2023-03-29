@@ -231,11 +231,11 @@ type InterpreterContext = {
 // }
 // // tslint:enable:object-literal-shorthand
 
-const declare = (sym: string, val: Value, heap: Heap) => {
-  // if (E[0].hasOwnProperty(sym)) {
-  //   throw new Error('already declared')
-  // }
-  // E[0][sym] = val
+const declare = (sym: string, val: Value, interpreterContext: InterpreterContext) => {
+  const { variableLookupEnv, env, heap } = interpreterContext
+  const pos = lookupVairable(sym, variableLookupEnv)
+  console.log(pos)
+  heap.setEnvironmentValue(env, pos, val)
 }
 
 const scanDeclarations = (cmds: Command[]): string[] => {
@@ -260,7 +260,24 @@ const scanDeclarations = (cmds: Command[]): string[] => {
 
 const extendVariableLookupEnv = (locals: string[], lookupEnv: string[][]) => {
   // returns a shallow copy
-  return [...lookupEnv].push(locals)
+  const newEnv = [...lookupEnv]
+  newEnv.push(locals)
+  return newEnv
+}
+
+const lookupVairable = (sym: string, lookupEnv: string[][]) => {
+  let frameIndex = lookupEnv.length
+  let valueIndex = -1
+  while (valueIndex == -1) {
+    const frame = lookupEnv[--frameIndex]
+    for (let i = 0; i < frame.length; i++) {
+      if (frame[i] === sym) {
+        valueIndex = i
+        break
+      }
+    }
+  }
+  return [frameIndex, valueIndex]
 }
 
 const applyBinaryOp = (sym: string, leftOperand: Value, rightOperand: Value): Value =>
@@ -276,9 +293,16 @@ const binaryOpMicrocode = {
 const pop = (stash: Value[]) => {
   const val = stash.pop()
   if (!val) {
-    throw Error('internal error: expected value from stack')
+    throw Error('internal error: expected value from stash')
   }
   return val
+}
+
+const peek = (stash: Value[]) => {
+  if (stash.length == 0) {
+    throw Error('internal error: expected value from stash')
+  }
+  return stash[stash.length - 1]
 }
 
 const microcode = {
@@ -290,13 +314,15 @@ const microcode = {
   },
 
   TranslationUnit: (cmd: Command, interpreterContext: InterpreterContext) => {
-    const { agenda } = interpreterContext
+    const { agenda, variableLookupEnv, heap, env } = interpreterContext
+    const { externalDeclarations } = cmd as TranslationUnitNode
+
+    const locals = scanDeclarations(externalDeclarations)
+    interpreterContext.variableLookupEnv = extendVariableLookupEnv(locals, variableLookupEnv)
+    const frameAddress = heap.allocateFrame(locals.length)
+    interpreterContext.env = heap.environmentExtend(frameAddress, env)
 
     const externalDeclarationCmds: Command[] = []
-
-    const locals = scanDeclarations(externalDeclarationCmds)
-
-    const { externalDeclarations } = cmd as TranslationUnitNode
     externalDeclarations.forEach(node => {
       externalDeclarationCmds.push(node)
       externalDeclarationCmds.push(popInstruction)
@@ -374,7 +400,7 @@ const microcode = {
     const { stash, heap } = interpreterContext
 
     const { sym } = cmd as DeclarationInstruction
-    declare(sym, stash[stash.length - 1], heap)
+    declare(sym, peek(stash), interpreterContext)
   },
 
   AssignmentExpression: (cmd: Command, interpreterContext: InterpreterContext) => {
@@ -462,10 +488,12 @@ export function* evaluate(node: Node, context: Context) {
     heap: new Heap(10),
     runtimeStack: [],
     env: 0,
-    variableLookupEnv: []
+    variableLookupEnv: [[]] // TODO: add primitives / builtins here
   }
 
-  const { stash, agenda } = interpreterContext
+  const { stash, agenda, heap } = interpreterContext
+
+  interpreterContext.env = heap.createGlobalEnvironment()
 
   let i = 0
   while (i < step_limit) {

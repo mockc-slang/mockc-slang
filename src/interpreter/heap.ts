@@ -160,7 +160,7 @@ export class Heap {
   isNull(x: number) {
     return this.checkTag(x, Heap.NullTag)
   }
-  // TODO: is this necessary??
+  // TODO: check if this is necessary when handling declarator-only situation
   Unassigned = this.makeTaggedNaN(Heap.UnassignedTag)
   isUnassigned(x: number) {
     return this.checkTag(x, Heap.UnassignedTag)
@@ -338,7 +338,7 @@ export class Heap {
 
   // size is number of words to be reserved
   // for values
-  heap_allocate_Frame(size: number) {
+  allocateFrame(size: number) {
     const frameIndex = this.free
     this.free += Heap.FrameValuesOffset + size
     this.setTaggedNaNAtIndex(frameIndex, Heap.FrameTag)
@@ -390,8 +390,11 @@ export class Heap {
     return this.makeAddress(env_index)
   }
 
-  // TODO: check where is this used in interpreter
-  // heap_empty_Environment = this.allocateEnvironment(0)
+  createGlobalEnvironment() {
+    // TODO: add builtin functions here
+    // heap_Environment_extend(frame_address, heap_empty_Environment)
+    return this.allocateEnvironment(0)
+  }
 
   getEnvironmentSize(envAddress: number) {
     return this.getWordAtIndex(this.getIndexFromAddress(envAddress) + Heap.EnvironmentSizeOffset)
@@ -400,7 +403,6 @@ export class Heap {
   // access environment given by address
   // using a "position", i.e. a pair of
   // frame index and value index
-  // TODO: no such thing as "instr.pos" or valueIndex in explicit control eval? check how to impl this
   getEnvironmentValue(envAddress: number, position: number[]) {
     const [frameIndex, valueIndex] = position
     const frameAddress = this.getWordAtIndex(
