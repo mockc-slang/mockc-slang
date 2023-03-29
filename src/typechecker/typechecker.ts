@@ -261,12 +261,15 @@ function check(node: Node | undefined, E: TypeEnvironment): TypeAssignment | und
 
   if (tag == 'FunctionDefinition') {
     const { type, declarator, compoundStatement } = node
-    const { identifier, parameters } = declarator.directDeclarator
+    const {
+      identifier,
+      parameterList: { parameters }
+    } = declarator.directDeclarator
     extendEnvironment(E)
     const returnType = getVariableTypeFromString(type)
     assignIdentifierType(E, identifier, {
       tag: 'Closure',
-      parameters: parameters?.map(param => check(param, E)) || [], // TODO: Declare in same scope as compound statement
+      parameters: parameters.map(param => check(param, E)),
       returnType
     })
     const actualReturnType = check(compoundStatement, E)
