@@ -379,11 +379,14 @@ class NodeGenerator implements MockCVisitor<Node> {
 
     if (sym == '(') {
       const identifier = ctx.getChild(0).text
-      const { exprs } = ctx.argumentExpressionList()?.accept(this) as ExpressionListNode
+      const expressionList = ctx.argumentExpressionList()?.accept(this) as
+        | ExpressionListNode
+        | undefined
+      const params: ExpressionNode[] = expressionList?.exprs || []
       return {
         tag: 'FunctionApplication',
         identifier,
-        params: exprs
+        params
       }
     }
 
