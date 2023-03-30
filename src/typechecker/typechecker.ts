@@ -357,9 +357,9 @@ function check(node: Node | undefined, E: TypeEnvironment): TypeAssignment {
         )
       }
       return acc
-    }, VOID_TYPE) // TODO: check for return statements
+    }, undefined)
     exitEnvironment(E)
-    return returnType
+    return returnType || VOID_TYPE
   }
 
   if (tag == 'ReturnStatement') {
