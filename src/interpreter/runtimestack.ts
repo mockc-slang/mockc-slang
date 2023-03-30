@@ -128,7 +128,7 @@ export class RuntimeStack extends Memory {
     )
   }
 
-  frameDisplay(frameAddress: number) {
+  displayFrame(frameAddress: number) {
     console.log('Frame:')
     const size = this.getFrameSize(frameAddress)
     console.log('frame size:', size)
@@ -218,14 +218,14 @@ export class RuntimeStack extends Memory {
   }
 
   // for debuggging: display environment
-  environmentDisplay(envAddress: number) {
+  displayEnvironment(envAddress: number) {
     const size = this.getEnvironmentSize(envAddress)
     console.log('Environment:')
     console.log('environment size:', size)
     for (let i = 0; i < size; i++) {
       console.log('frame index:', i)
       const frame = this.getEnvironmentFrame(envAddress, i)
-      this.frameDisplay(frame)
+      this.displayFrame(frame)
     }
   }
 }
