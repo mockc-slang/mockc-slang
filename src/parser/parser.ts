@@ -241,7 +241,7 @@ class NodeGenerator implements MockCVisitor<Node> {
   visitFunctionDefinition(ctx: FunctionDefinitionContext): FunctionDefinitionNode {
     return {
       tag: 'FunctionDefinition',
-      type: ctx.typeSpecifier()?.text,
+      type: ctx.typeSpecifier().text,
       declarator: ctx.declarator().accept(this) as DeclaratorNode,
       compoundStatement: ctx.compoundStatement().accept(this) as CompoundStatementNode
     }
@@ -264,7 +264,10 @@ class NodeGenerator implements MockCVisitor<Node> {
   visitPointer?: ((ctx: PointerContext) => Node) | undefined
 
   visitDirectDeclarator(ctx: DirectDeclaratorContext): DirectDeclaratorNode {
-    const parameterList = (ctx.parameterList()?.accept(this) as ParameterListNode) || []
+    const parameterList = (ctx.parameterList()?.accept(this) as ParameterListNode) || {
+      tag: 'ParameterList',
+      parameters: []
+    }
 
     // TODO: Check for function/array declaration
     return {
@@ -396,6 +399,14 @@ class NodeGenerator implements MockCVisitor<Node> {
       return {
         tag: 'StringLiteral',
         val: stringLiteralNode.text
+      }
+    }
+
+    const identifierNode = ctx.IDENTIFIER()
+    if (identifierNode) {
+      return {
+        tag: 'Identifier',
+        val: identifierNode.text
       }
     }
 

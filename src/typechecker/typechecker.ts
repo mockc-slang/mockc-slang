@@ -54,6 +54,8 @@ function getVariableTypeFromString(type: string): VariableTypeAssignment {
       return INT_TYPE
     case 'char':
       return CHAR_TYPE
+    case 'void':
+      return VOID_TYPE
     default:
       throw new FatalTypeError(
         {
@@ -129,7 +131,7 @@ function checkIdentifierType(E: TypeEnvironment, identifier: string): TypeAssign
         column: 0
       }
     },
-    `Unable to locate type for ${identifier}`
+    `Unable to locate type for identifier: ${identifier}`
   )
 }
 
@@ -207,7 +209,7 @@ function check(node: Node | undefined, E: TypeEnvironment): TypeAssignment {
         )}`
       )
     }
-    assignIdentifierType(E, identifier, initializerType)
+    assignIdentifierType(E, identifier, declaredType)
     return
   }
 
@@ -355,7 +357,7 @@ function check(node: Node | undefined, E: TypeEnvironment): TypeAssignment {
         )
       }
       return acc
-    }, undefined) // TODO: check for return statements
+    }, VOID_TYPE) // TODO: check for return statements
     exitEnvironment(E)
     return returnType
   }
@@ -371,6 +373,11 @@ function check(node: Node | undefined, E: TypeEnvironment): TypeAssignment {
 
   if (tag == 'CharacterLiteral') {
     return CHAR_TYPE
+  }
+
+  if (tag == 'Identifier') {
+    const { val } = node
+    return checkIdentifierType(E, val)
   }
 
   throw new FatalTypeError(
@@ -389,6 +396,6 @@ function check(node: Node | undefined, E: TypeEnvironment): TypeAssignment {
 }
 
 export function checkTyping(program: Node) {
-  const E: TypeEnvironment = []
+  const E: TypeEnvironment = [{}]
   check(program, E)
 }

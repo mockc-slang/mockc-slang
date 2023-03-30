@@ -446,6 +446,7 @@ export type ExpressionNode =
   | NumberNode
   | StringLiteralNode
   | CharacterLiteralNode
+  | IdentifierNode
   | ExpressionListNode
 
 export type StatementNode =
@@ -580,6 +581,11 @@ export type StringLiteralNode = {
 
 export type CharacterLiteralNode = {
   tag: 'CharacterLiteral'
+  val: string
+}
+
+export type IdentifierNode = {
+  tag: 'Identifier'
   val: string
 }
 
