@@ -74,13 +74,23 @@ function getVariableTypeFromString(type: string): VariableTypeAssignment {
   }
 }
 
-function isSameType(a: TypeAssignment, b: TypeAssignment) {
+function isSameType(a: TypeAssignment, b: TypeAssignment): boolean {
   if (!a || !b) return false
   if (a.tag == 'Variable' && b.tag == 'Variable') {
     return a.type == b.type
   }
   if (a.tag == 'Closure' && b.tag == 'Closure') {
-    return true // Functions cannot be redefined
+    const { parameterTypes: aParameterTypes, returnType: aReturnType } = a
+    const { parameterTypes: bParameterTypes, returnType: bReturnType } = b
+    if (aParameterTypes.length != bParameterTypes.length) {
+      return false
+    }
+    for (let i = 0; i < aParameterTypes.length; i++) {
+      if (!isSameType(aParameterTypes[i], bParameterTypes[i])) {
+        return false
+      }
+    }
+    return isSameType(aReturnType, bReturnType)
   }
   return false
 }
