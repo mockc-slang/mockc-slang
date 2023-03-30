@@ -35,11 +35,18 @@ type VariableTypeAssignment = {
 }
 type ClosureTypeAssignment = {
   tag: 'Closure'
-  parameters: TypeAssignment[]
+  parameterTypes: TypeAssignment[]
   returnType: TypeAssignment
 }
 type TypeFrame = { [key: string]: TypeAssignment }
 type TypeEnvironment = TypeFrame[]
+
+function toString(type: TypeAssignment): string {
+  if (!type) return 'undefined'
+  if (type.tag == 'Variable') return type.type
+  const { parameterTypes, returnType } = type
+  return `(${parameterTypes.map(paramType => toString(paramType))}) => ${toString(returnType)}`
+}
 
 function getVariableTypeFromString(type: string): VariableTypeAssignment {
   switch (type) {
@@ -130,7 +137,7 @@ function checkSymType(
   sym: string,
   leftExprType: TypeAssignment,
   rightExprType: TypeAssignment
-): TypeAssignment | undefined {
+): TypeAssignment {
   switch (sym) {
     case '+':
     case '-':
@@ -146,7 +153,9 @@ function checkSymType(
               column: 0
             }
           },
-          `+ operator must be applied on int int: instead found ${leftExprType} and ${rightExprType}`
+          `+ operator must be applied on int int: instead found ${toString(
+            leftExprType
+          )} and ${toString(rightExprType)}`
         )
       }
       return INT_TYPE
@@ -155,7 +164,7 @@ function checkSymType(
   }
 }
 
-function check(node: Node | undefined, E: TypeEnvironment): TypeAssignment | undefined {
+function check(node: Node | undefined, E: TypeEnvironment): TypeAssignment {
   if (!node) {
     return
   }
@@ -178,9 +187,10 @@ function check(node: Node | undefined, E: TypeEnvironment): TypeAssignment | und
   }
 
   if (tag == 'Declaration') {
-    const { type, identifier, initializer } = node
+    const { type: typeString, identifier, initializer } = node
+    const declaredType = getVariableTypeFromString(typeString)
     const initializerType = check(initializer, E)
-    if (initializerType && !isSameType(getVariableTypeFromString(type), initializerType)) {
+    if (initializerType && !isSameType(declaredType, initializerType)) {
       throw new FatalTypeError(
         {
           start: {
@@ -192,7 +202,9 @@ function check(node: Node | undefined, E: TypeEnvironment): TypeAssignment | und
             column: 0
           }
         },
-        `Assignment expression type mismatch: ${initializerType} assigned to ${type}`
+        `Assignment expression type mismatch: ${toString(initializerType)} assigned to ${toString(
+          declaredType
+        )}`
       )
     }
     assignIdentifierType(E, identifier, initializerType)
@@ -224,7 +236,7 @@ function check(node: Node | undefined, E: TypeEnvironment): TypeAssignment | und
             column: 0
           }
         },
-        `Conditional expression predicate must be int: instead found ${predType}`
+        `Conditional expression predicate must be int: instead found ${toString(predType)}`
       )
     }
     const consType = check(cons, E)
@@ -241,7 +253,9 @@ function check(node: Node | undefined, E: TypeEnvironment): TypeAssignment | und
             column: 0
           }
         },
-        `Conditional expression return types must be the same: instead found ${cons} and ${alt}`
+        `Conditional expression return types must be the same: instead found ${toString(
+          consType
+        )} and ${toString(altType)}`
       )
     }
     return consType
@@ -269,7 +283,7 @@ function check(node: Node | undefined, E: TypeEnvironment): TypeAssignment | und
     const returnType = getVariableTypeFromString(type)
     assignIdentifierType(E, identifier, {
       tag: 'Closure',
-      parameters: parameters.map(param => check(param, E)),
+      parameterTypes: parameters.map(param => check(param, E)),
       returnType
     })
     const actualReturnType = check(compoundStatement, E)
@@ -285,7 +299,9 @@ function check(node: Node | undefined, E: TypeEnvironment): TypeAssignment | und
             column: 0
           }
         },
-        `Function must return defined type: instead found ${type} and ${actualReturnType}`
+        `Function must return defined type: expected ${toString(returnType)} but found ${toString(
+          actualReturnType
+        )}`
       )
     }
     exitEnvironment(E)
@@ -313,7 +329,7 @@ function check(node: Node | undefined, E: TypeEnvironment): TypeAssignment | und
   if (tag == 'CompoundStatement') {
     const { statements } = node
     extendEnvironment(E)
-    const returnType = statements.reduce((acc, curr) => {
+    const returnType = statements.reduce((acc: TypeAssignment, curr) => {
       const statementType = check(curr, E)
       if (!statementType) {
         return acc
@@ -333,7 +349,9 @@ function check(node: Node | undefined, E: TypeEnvironment): TypeAssignment | und
               column: 0
             }
           },
-          `Return type must be consistent: instead found ${acc} and ${statementType}`
+          `Return type must be consistent: instead found ${toString(acc)} and ${toString(
+            statementType
+          )}`
         )
       }
       return acc
