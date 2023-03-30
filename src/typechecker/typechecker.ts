@@ -28,7 +28,8 @@ const VOID_TYPE: VariableTypeAssignment = {
   tag: 'Variable',
   type: 'void'
 }
-type TypeAssignment = VariableTypeAssignment | ClosureTypeAssignment | undefined
+type IdentifierTypeAssignment = VariableTypeAssignment | ClosureTypeAssignment
+type TypeAssignment = IdentifierTypeAssignment | undefined
 type VariableTypeAssignment = {
   tag: 'Variable'
   type: string
@@ -112,7 +113,7 @@ function assignIdentifierType(E: TypeEnvironment, identifier: string, type: Type
   E[E.length - 1][identifier] = type
 }
 
-function checkIdentifierType(E: TypeEnvironment, identifier: string): TypeAssignment {
+function checkIdentifierType(E: TypeEnvironment, identifier: string): IdentifierTypeAssignment {
   for (let i = E.length - 1; i >= 0; i--) {
     const type = E[i][identifier]
     if (!type) {
@@ -281,13 +282,15 @@ function check(node: Node | undefined, E: TypeEnvironment): TypeAssignment {
       identifier,
       parameterList: { parameters }
     } = declarator.directDeclarator
-    extendEnvironment(E)
     const returnType = getVariableTypeFromString(type)
-    assignIdentifierType(E, identifier, {
+    const closureType: TypeAssignment = {
       tag: 'Closure',
-      parameterTypes: parameters.map(param => check(param, E)),
+      parameterTypes: [],
       returnType
-    })
+    }
+    assignIdentifierType(E, identifier, closureType)
+    extendEnvironment(E)
+    closureType.parameterTypes = parameters.map(param => check(param, E)) // Only check params after extending environment
     const actualReturnType = check(compoundStatement, E)
     if (!isSameType(returnType, actualReturnType)) {
       throw new FatalTypeError(
@@ -324,7 +327,7 @@ function check(node: Node | undefined, E: TypeEnvironment): TypeAssignment {
 
   if (tag == 'ExpressionStatement') {
     const { exprs } = node
-    check(exprs, E)
+    exprs.forEach(expr => check(expr, E))
     return
   }
 
@@ -360,6 +363,65 @@ function check(node: Node | undefined, E: TypeEnvironment): TypeAssignment {
     }, undefined)
     exitEnvironment(E)
     return returnType || VOID_TYPE
+  }
+
+  if (tag == 'FunctionApplication') {
+    const { identifier, params } = node
+    const identifierType = checkIdentifierType(E, identifier)
+    if (identifierType.tag == 'Variable') {
+      throw new FatalTypeError(
+        {
+          start: {
+            line: 0,
+            column: 0
+          },
+          end: {
+            line: 0,
+            column: 0
+          }
+        },
+        `No such function: ${identifier}`
+      )
+    }
+    const { parameterTypes: expectedTypes, returnType } = identifierType
+    const expectedLength = expectedTypes.length
+    const actualLength = params.length
+    if (expectedLength != actualLength) {
+      throw new FatalTypeError(
+        {
+          start: {
+            line: 0,
+            column: 0
+          },
+          end: {
+            line: 0,
+            column: 0
+          }
+        },
+        `Function ${identifier} expects ${expectedLength} arguments but found ${actualLength} instead`
+      )
+    }
+    const actualTypes = params.map(param => check(param, E))
+    for (let i = 0; i < expectedLength; i++) {
+      if (!isSameType(expectedTypes[i], actualTypes[i])) {
+        throw new FatalTypeError(
+          {
+            start: {
+              line: 0,
+              column: 0
+            },
+            end: {
+              line: 0,
+              column: 0
+            }
+          },
+          `Function ${identifier} expects (${expectedTypes.map(type =>
+            toString(type)
+          )}) but found ${actualTypes.map(type => toString(type))} instead`
+        )
+      }
+    }
+    return returnType
   }
 
   if (tag == 'ReturnStatement') {

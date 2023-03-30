@@ -448,6 +448,7 @@ export type ExpressionNode =
   | CharacterLiteralNode
   | IdentifierNode
   | ExpressionListNode
+  | FunctionApplicationNode
 
 export type StatementNode =
   | ExpressionStatementNode
@@ -506,7 +507,7 @@ export type CompoundStatementNode = {
 
 export type ExpressionStatementNode = {
   tag: 'ExpressionStatement'
-  exprs: ExpressionListNode
+  exprs: ExpressionNode[]
 }
 
 export type SelectionStatementNode = {
@@ -567,6 +568,12 @@ export type ConditionalExpressionNode = {
   pred: ExpressionNode
   cons: ExpressionNode
   alt: ExpressionNode
+}
+
+export type FunctionApplicationNode = {
+  tag: 'FunctionApplication'
+  identifier: string
+  params: ExpressionNode[]
 }
 
 export type NumberNode = {

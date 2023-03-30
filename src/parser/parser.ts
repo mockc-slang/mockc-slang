@@ -371,11 +371,38 @@ class NodeGenerator implements MockCVisitor<Node> {
   }
 
   visitPostfixExpression(ctx: PostfixExpressionContext): ExpressionNode {
-    // TODO: Check for postfix expression
+    if (ctx.childCount == 1) {
+      return ctx.primaryExpression()?.accept(this) as ExpressionNode
+    }
+
+    const sym = ctx.getChild(1).text
+
+    if (sym == '(') {
+      const identifier = ctx.getChild(0).text
+      const { exprs } = ctx.argumentExpressionList()?.accept(this) as ExpressionListNode
+      return {
+        tag: 'FunctionApplication',
+        identifier,
+        params: exprs
+      }
+    }
+
     return ctx.primaryExpression()?.accept(this) as ExpressionNode
   }
 
-  visitArgumentExpressionList?: ((ctx: ArgumentExpressionListContext) => Node) | undefined
+  visitArgumentExpressionList(ctx: ArgumentExpressionListContext): ExpressionNode {
+    const exprs: ExpressionNode[] = []
+    for (let i = 0; i < ctx.childCount; i++) {
+      const child = ctx.getChild(i)
+      if (child.text != ',') {
+        exprs.push(child.accept(this) as ExpressionNode)
+      }
+    }
+    return {
+      tag: 'ExpressionList',
+      exprs
+    }
+  }
 
   visitPrimaryExpression(ctx: PrimaryExpressionContext): ExpressionNode {
     const number = ctx.NUMBER()
@@ -527,9 +554,11 @@ class NodeGenerator implements MockCVisitor<Node> {
   }
 
   visitExpressionStatement(ctx: ExpressionStatementContext): ExpressionStatementNode {
+    const expressionList = ctx.expressionList()?.accept(this) as ExpressionListNode | undefined
+
     return {
       tag: 'ExpressionStatement',
-      exprs: (ctx.expressionList()?.accept(this) || []) as ExpressionListNode
+      exprs: expressionList?.exprs || []
     }
   }
 
@@ -593,7 +622,7 @@ export function parse(source: string, context: Context) {
     try {
       const tree = parser.compilationUnit()
       program = convertSource(tree)
-      // console.log(JSON.stringify(program, undefined, 2), 'final tree')
+      console.log(JSON.stringify(program, undefined, 2), 'final tree')
       checkTyping(program)
     } catch (error) {
       if (error instanceof FatalSyntaxError || error instanceof FatalTypeError) {
