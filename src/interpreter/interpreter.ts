@@ -28,16 +28,8 @@ import {
 import { identifier } from '../utils/astCreator'
 import { evaluateBinaryExpression, evaluateUnaryExpression } from '../utils/operators'
 import * as rttc from '../utils/rttc'
-import { Heap } from './heap'
+import { RuntimeStack } from './runtimestack'
 
-type InterpreterContext = {
-  agenda: Command[]
-  stash: Value[]
-  heap: Heap
-  runtimeStack: Value[]
-  env: number
-  variableLookupEnv: string[][]
-}
 // class Thunk {
 //   public value: Value
 //   public isMemoized: boolean
@@ -231,10 +223,18 @@ type InterpreterContext = {
 // }
 // // tslint:enable:object-literal-shorthand
 
+type InterpreterContext = {
+  agenda: Command[]
+  stash: Value[]
+  rts: RuntimeStack
+  env: number
+  variableLookupEnv: string[][]
+}
+
 const declare = (sym: string, val: Value, interpreterContext: InterpreterContext) => {
-  const { variableLookupEnv, env, heap } = interpreterContext
+  const { variableLookupEnv, env, rts } = interpreterContext
   const pos = lookupVairable(sym, variableLookupEnv)
-  heap.setEnvironmentValue(env, pos, val)
+  rts.setEnvironmentValue(env, pos, val)
 }
 
 const scanDeclarations = (cmds: Command[]): string[] => {
@@ -313,13 +313,13 @@ const microcode = {
   },
 
   TranslationUnit: (cmd: Command, interpreterContext: InterpreterContext) => {
-    const { agenda, variableLookupEnv, heap, env } = interpreterContext
+    const { agenda, variableLookupEnv, rts, env } = interpreterContext
     const { externalDeclarations } = cmd as TranslationUnitNode
 
     const locals = scanDeclarations(externalDeclarations)
     interpreterContext.variableLookupEnv = extendVariableLookupEnv(locals, variableLookupEnv)
-    const frameAddress = heap.allocateFrame(locals.length)
-    interpreterContext.env = heap.environmentExtend(frameAddress, env)
+    const frameAddress = rts.allocateFrame(locals.length)
+    interpreterContext.env = rts.environmentExtend(frameAddress, env)
 
     const externalDeclarationCmds: Command[] = []
     externalDeclarations.forEach(node => {
@@ -396,7 +396,7 @@ const microcode = {
   },
 
   DeclarationInstruction: (cmd: Command, interpreterContext: InterpreterContext) => {
-    const { stash, heap } = interpreterContext
+    const { stash, rts } = interpreterContext
 
     const { sym } = cmd as DeclarationInstruction
     declare(sym, peek(stash), interpreterContext)
@@ -484,15 +484,14 @@ export function* evaluate(node: Node, context: Context) {
   const interpreterContext: InterpreterContext = {
     agenda: [node],
     stash: [],
-    heap: new Heap(10),
-    runtimeStack: [],
+    rts: new RuntimeStack(10),
     env: 0,
     variableLookupEnv: [[]] // TODO: add primitives / builtins here
   }
 
-  const { stash, agenda, heap } = interpreterContext
+  const { stash, agenda, rts } = interpreterContext
 
-  interpreterContext.env = heap.createGlobalEnvironment()
+  interpreterContext.env = rts.createGlobalEnvironment()
 
   let i = 0
   while (i < step_limit) {
