@@ -70,10 +70,12 @@ import {
   ErrorType,
   ExpressionListNode,
   ExpressionNode,
+  ExpressionStatementNode,
   ExternalDeclarationNode,
   FunctionDefinitionNode,
   InitDeclaratorNode,
   InitializerNode,
+  JumpStatementNode,
   Node,
   ParameterDeclarationNode,
   ParameterListNode,
@@ -239,7 +241,7 @@ class NodeGenerator implements MockCVisitor<Node> {
   visitFunctionDefinition(ctx: FunctionDefinitionContext): FunctionDefinitionNode {
     return {
       tag: 'FunctionDefinition',
-      type: ctx.typeSpecifier()?.text,
+      type: ctx.typeSpecifier().text,
       declarator: ctx.declarator().accept(this) as DeclaratorNode,
       compoundStatement: ctx.compoundStatement().accept(this) as CompoundStatementNode
     }
@@ -262,7 +264,10 @@ class NodeGenerator implements MockCVisitor<Node> {
   visitPointer?: ((ctx: PointerContext) => Node) | undefined
 
   visitDirectDeclarator(ctx: DirectDeclaratorContext): DirectDeclaratorNode {
-    const parameterList = (ctx.parameterList()?.accept(this) as ParameterListNode) || []
+    const parameterList = (ctx.parameterList()?.accept(this) as ParameterListNode) || {
+      tag: 'ParameterList',
+      parameters: []
+    }
 
     // TODO: Check for function/array declaration
     return {
@@ -366,11 +371,41 @@ class NodeGenerator implements MockCVisitor<Node> {
   }
 
   visitPostfixExpression(ctx: PostfixExpressionContext): ExpressionNode {
-    // TODO: Check for postfix expression
+    if (ctx.childCount == 1) {
+      return ctx.primaryExpression()?.accept(this) as ExpressionNode
+    }
+
+    const sym = ctx.getChild(1).text
+
+    if (sym == '(') {
+      const identifier = ctx.getChild(0).text
+      const expressionList = ctx.argumentExpressionList()?.accept(this) as
+        | ExpressionListNode
+        | undefined
+      const params: ExpressionNode[] = expressionList?.exprs || []
+      return {
+        tag: 'FunctionApplication',
+        identifier,
+        params
+      }
+    }
+
     return ctx.primaryExpression()?.accept(this) as ExpressionNode
   }
 
-  visitArgumentExpressionList?: ((ctx: ArgumentExpressionListContext) => Node) | undefined
+  visitArgumentExpressionList(ctx: ArgumentExpressionListContext): ExpressionNode {
+    const exprs: ExpressionNode[] = []
+    for (let i = 0; i < ctx.childCount; i++) {
+      const child = ctx.getChild(i)
+      if (child.text != ',') {
+        exprs.push(child.accept(this) as ExpressionNode)
+      }
+    }
+    return {
+      tag: 'ExpressionList',
+      exprs
+    }
+  }
 
   visitPrimaryExpression(ctx: PrimaryExpressionContext): ExpressionNode {
     const number = ctx.NUMBER()
@@ -394,6 +429,14 @@ class NodeGenerator implements MockCVisitor<Node> {
       return {
         tag: 'StringLiteral',
         val: stringLiteralNode.text
+      }
+    }
+
+    const identifierNode = ctx.IDENTIFIER()
+    if (identifierNode) {
+      return {
+        tag: 'Identifier',
+        val: identifierNode.text
       }
     }
 
@@ -493,16 +536,51 @@ class NodeGenerator implements MockCVisitor<Node> {
   }
 
   visitStatement(ctx: StatementContext): StatementNode {
-    return ctx.expressionStatement()?.accept(this) as ExpressionNode
+    const expressionStatement = ctx.expressionStatement()
+    if (expressionStatement) {
+      return expressionStatement.accept(this) as ExpressionStatementNode
+    }
+    const compoundStatement = ctx.compoundStatement()
+    if (compoundStatement) {
+      return compoundStatement.accept(this) as ExpressionStatementNode
+    }
+    const selectionStatement = ctx.selectionStatement()
+    if (selectionStatement) {
+      return selectionStatement.accept(this) as ExpressionStatementNode
+    }
+    const iterationStatement = ctx.iterationStatement()
+    if (iterationStatement) {
+      return iterationStatement.accept(this) as ExpressionStatementNode
+    }
+
+    return ctx.jumpStatement()?.accept(this) as ExpressionStatementNode
   }
 
-  visitExpressionStatement(ctx: ExpressionStatementContext): ExpressionNode {
-    return ctx.expressionList()?.accept(this) as ExpressionListNode
+  visitExpressionStatement(ctx: ExpressionStatementContext): ExpressionStatementNode {
+    const expressionList = ctx.expressionList()?.accept(this) as ExpressionListNode | undefined
+
+    return {
+      tag: 'ExpressionStatement',
+      exprs: expressionList?.exprs || []
+    }
   }
 
   visitSelectionStatement?: ((ctx: SelectionStatementContext) => Node) | undefined
   visitIterationStatement?: ((ctx: IterationStatementContext) => Node) | undefined
-  visitJumpStatement?: ((ctx: JumpStatementContext) => Node) | undefined
+
+  visitJumpStatement(ctx: JumpStatementContext): JumpStatementNode {
+    const expressionList = ctx.expressionList()
+    if (expressionList) {
+      return {
+        tag: 'ReturnStatement',
+        exprs: expressionList.accept(this) as ExpressionListNode
+      }
+    }
+    return {
+      tag: 'BreakStatement'
+    }
+  }
+
   visit(tree: ParseTree): Node {
     throw new Error('Method not implemented.')
   }
@@ -547,7 +625,7 @@ export function parse(source: string, context: Context) {
     try {
       const tree = parser.compilationUnit()
       program = convertSource(tree)
-      // console.log(JSON.stringify(program, undefined, 2), 'final tree')
+      console.log(JSON.stringify(program, undefined, 2), 'final tree')
       checkTyping(program)
     } catch (error) {
       if (error instanceof FatalSyntaxError || error instanceof FatalTypeError) {

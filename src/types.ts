@@ -436,7 +436,7 @@ export type Node =
   | InitializerNode
   | AssignmentExpressionNode
   | ExpressionNode
-  | CompoundStatementNode
+  | StatementNode
   | ParameterDeclarationNode
   | ParameterListNode
 
@@ -446,9 +446,18 @@ export type ExpressionNode =
   | NumberNode
   | StringLiteralNode
   | CharacterLiteralNode
+  | IdentifierNode
   | ExpressionListNode
+  | FunctionApplicationNode
 
-export type StatementNode = ExpressionNode
+export type StatementNode =
+  | ExpressionStatementNode
+  | CompoundStatementNode
+  | SelectionStatementNode
+  | IterationStatementNode
+  | JumpStatementNode
+
+export type JumpStatementNode = BreakStatementNode | ContinueStatementNode | ReturnStatementNode
 
 export type CompilationUnitNode = {
   tag: 'CompilationUnit'
@@ -468,7 +477,7 @@ export type ExternalDeclarationNode = {
 
 export type FunctionDefinitionNode = {
   tag: 'FunctionDefinition'
-  type?: string
+  type: string
   declarator: DeclaratorNode
   compoundStatement: CompoundStatementNode
 }
@@ -494,6 +503,32 @@ export type InitDeclaratorNode = {
 export type CompoundStatementNode = {
   tag: 'CompoundStatement'
   statements: (DeclarationNode | StatementNode)[]
+}
+
+export type ExpressionStatementNode = {
+  tag: 'ExpressionStatement'
+  exprs: ExpressionNode[]
+}
+
+export type SelectionStatementNode = {
+  tag: 'SelectionStatement'
+}
+
+export type IterationStatementNode = {
+  tag: 'IterationStatement'
+}
+
+export type BreakStatementNode = {
+  tag: 'BreakStatement'
+}
+
+export type ContinueStatementNode = {
+  tag: 'ContinueStatement'
+}
+
+export type ReturnStatementNode = {
+  tag: 'ReturnStatement'
+  exprs: ExpressionListNode
 }
 
 export type DeclaratorNode = {
@@ -535,6 +570,12 @@ export type ConditionalExpressionNode = {
   alt: ExpressionNode
 }
 
+export type FunctionApplicationNode = {
+  tag: 'FunctionApplication'
+  identifier: string
+  params: ExpressionNode[]
+}
+
 export type NumberNode = {
   tag: 'Number'
   val: number
@@ -547,6 +588,11 @@ export type StringLiteralNode = {
 
 export type CharacterLiteralNode = {
   tag: 'CharacterLiteral'
+  val: string
+}
+
+export type IdentifierNode = {
+  tag: 'Identifier'
   val: string
 }
 

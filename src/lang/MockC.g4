@@ -7,7 +7,7 @@ externalDeclaration:
 	| declaration
 	| ';'; // stray ;
 
-functionDefinition: typeSpecifier? declarator compoundStatement;
+functionDefinition: typeSpecifier declarator compoundStatement;
 typeSpecifier: 'void' | 'char' | 'int' | 'char[]';
 declarator: pointer? directDeclarator;
 pointer: '*' pointer?;
