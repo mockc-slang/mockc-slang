@@ -434,7 +434,6 @@ export type Node =
   | DeclaratorNode
   | DirectDeclaratorNode
   | InitializerNode
-  | AssignmentExpressionNode
   | ExpressionNode
   | StatementNode
   | ParameterDeclarationNode
@@ -443,12 +442,13 @@ export type Node =
 export type ExpressionNode =
   | ConditionalExpressionNode
   | BinaryOpExpressionNode
+  | AssignmentExpressionNode
+  | FunctionApplicationNode
   | NumberNode
   | StringLiteralNode
   | CharacterLiteralNode
   | IdentifierNode
   | ExpressionListNode
-  | FunctionApplicationNode
 
 export type StatementNode =
   | ExpressionStatementNode
@@ -555,12 +555,14 @@ export type ParameterDeclarationNode = {
 
 export type InitializerNode = {
   tag: 'Initializer'
-  expr?: AssignmentExpressionNode
+  expr?: ExpressionNode
 }
 
 export type AssignmentExpressionNode = {
   tag: 'AssignmentExpression'
-  expr?: ExpressionNode
+  identifier: string
+  sym: string
+  expr: ExpressionNode
 }
 
 export type ConditionalExpressionNode = {
