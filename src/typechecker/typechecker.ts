@@ -173,7 +173,19 @@ function checkSymType(
       }
       return INT_TYPE
     default:
-      return
+      throw new FatalTypeError(
+        {
+          start: {
+            line: 0,
+            column: 0
+          },
+          end: {
+            line: 0,
+            column: 0
+          }
+        },
+        `Type checking not supported for ${sym}`
+      )
   }
 }
 
@@ -215,7 +227,7 @@ function check(node: Node | undefined, E: TypeEnvironment): TypeAssignment {
             column: 0
           }
         },
-        `Assignment expression type mismatch: ${toString(initializerType)} assigned to ${toString(
+        `Declaration type mismatch: ${toString(initializerType)} declared as ${toString(
           declaredType
         )}`
       )
@@ -230,8 +242,30 @@ function check(node: Node | undefined, E: TypeEnvironment): TypeAssignment {
   }
 
   if (tag == 'AssignmentExpression') {
-    const { expr } = node
-    return check(expr, E)
+    const { identifier, sym, expr } = node
+    const identifierType = checkIdentifierType(E, identifier)
+    const exprType = check(expr, E)
+
+    if (sym == '=') {
+      if (!isSameType(identifierType, exprType)) {
+        throw new FatalTypeError(
+          {
+            start: {
+              line: 0,
+              column: 0
+            },
+            end: {
+              line: 0,
+              column: 0
+            }
+          },
+          `Assignment type mismatch: ${toString(exprType)} assigned to ${toString(identifierType)}`
+        )
+      }
+      return identifierType
+    }
+
+    return checkSymType(sym, identifierType, exprType)
   }
 
   if (tag == 'ConditionalExpression') {

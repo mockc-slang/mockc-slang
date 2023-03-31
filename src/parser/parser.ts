@@ -73,6 +73,7 @@ import {
   ExpressionStatementNode,
   ExternalDeclarationNode,
   FunctionDefinitionNode,
+  IdentifierNode,
   InitDeclaratorNode,
   InitializerNode,
   JumpStatementNode,
@@ -460,6 +461,20 @@ class NodeGenerator implements MockCVisitor<Node> {
   }
 
   visitAssignmentExpression(ctx: AssignmentExpressionContext): ExpressionNode {
+    const unaryExpression = ctx.unaryExpression()
+    const assignmentOperator = ctx.assignmentOperator()
+    const assignmentExpression = ctx.assignmentExpression()
+    if (unaryExpression && assignmentOperator && assignmentExpression) {
+      const { val: identifier } = unaryExpression.accept(this) as IdentifierNode
+      const sym = assignmentOperator.text
+      const expr = assignmentExpression.accept(this) as ExpressionNode
+      return {
+        tag: 'AssignmentExpression',
+        identifier,
+        sym,
+        expr
+      }
+    }
     return ctx.conditionalExpression()?.accept(this) as ExpressionNode
   }
 
@@ -501,10 +516,9 @@ class NodeGenerator implements MockCVisitor<Node> {
   }
 
   visitInitDeclarator(ctx: InitDeclaratorContext): InitDeclaratorNode {
-    const identifier = ctx.declarator().directDeclarator().IDENTIFIER().text
     return {
       tag: 'InitDeclarator',
-      identifier,
+      identifier: ctx.declarator().directDeclarator().IDENTIFIER().text,
       initializer: ctx.initializer()?.accept(this) as InitializerNode
     }
   }
@@ -512,7 +526,7 @@ class NodeGenerator implements MockCVisitor<Node> {
   visitInitializer(ctx: InitializerContext): InitializerNode {
     return {
       tag: 'Initializer',
-      expr: ctx.assignmentExpression()?.accept(this) as AssignmentExpressionNode
+      expr: ctx.assignmentExpression()?.accept(this) as ExpressionNode
     }
   }
 
@@ -625,7 +639,7 @@ export function parse(source: string, context: Context) {
     try {
       const tree = parser.compilationUnit()
       program = convertSource(tree)
-      console.log(JSON.stringify(program, undefined, 2), 'final tree')
+      // console.log(JSON.stringify(program, undefined, 2), 'final tree')
       checkTyping(program)
     } catch (error) {
       if (error instanceof FatalSyntaxError || error instanceof FatalTypeError) {
