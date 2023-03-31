@@ -44,22 +44,22 @@ export class Memory {
   }
 
   static testNanBoxing() {
-    const in_word = NaN
+    const inWord = NaN
 
     // place a NaN in a buffer and set its last bit
-    const in_buffer = new ArrayBuffer(8)
-    const in_view = new DataView(in_buffer)
-    in_view.setFloat64(0, in_word)
-    in_view.setUint8(7, 0 | (1 << 0))
+    const inBuffer = new ArrayBuffer(8)
+    const inView = new DataView(inBuffer)
+    inView.setFloat64(0, inWord)
+    inView.setUint8(7, 0 | (1 << 0))
 
     // get the "flagged" NaN out of the buffer
-    const out_word = in_view.getFloat64(0)
+    const outWord = inView.getFloat64(0)
 
     // display the last byte of the "flagged" NaN
-    const out_buffer = new ArrayBuffer(8)
-    const out_view = new DataView(out_buffer)
-    out_view.setFloat64(0, out_word)
-    return ((out_view.getUint8(7) >> 0) & 1) == 1
+    const outBuffer = new ArrayBuffer(8)
+    const outView = new DataView(outBuffer)
+    outView.setFloat64(0, outWord)
+    return ((outView.getUint8(7) >> 0) & 1) == 1
     // the result is 1 in Chrome (for nan boxing to work)
   }
 
@@ -94,26 +94,26 @@ export class Memory {
   }
 
   setTaggedNaNAtIndex(index: number, tag: number[]) {
-    const the_NaN = this.makeTaggedNaN(tag)
-    this.setWordAtIndex(index, the_NaN)
+    const theNaN = this.makeTaggedNaN(tag)
+    this.setWordAtIndex(index, theNaN)
   }
 
   // some magic bit manipulation: in view v,
   // set bit at index i to 1, where 0 <= i < 64
   static setBit(x: DataView, i: number) {
-    const byte_index = Math.floor(i / 8)
-    const current_byte = x.getUint8(byte_index)
-    const bit_index = 7 - (i % 8)
-    x.setUint8(byte_index, current_byte | (1 << bit_index))
+    const byteIndex = Math.floor(i / 8)
+    const currentByte = x.getUint8(byteIndex)
+    const bitIndex = 7 - (i % 8)
+    x.setUint8(byteIndex, currentByte | (1 << bitIndex))
   }
 
   // some more magic bit manipulation: in view v,
   // set bit at index i to 1, where 0 <= i < 64
   static unsetBit(x: DataView, i: number) {
-    const byte_index = Math.floor(i / 8)
-    const current_byte = x.getUint8(byte_index)
-    const bit_index = 7 - (i % 8)
-    x.setUint8(byte_index, current_byte & ~(1 << bit_index))
+    const byteIndex = Math.floor(i / 8)
+    const currentByte = x.getUint8(byteIndex)
+    const bitIndex = 7 - (i % 8)
+    x.setUint8(byteIndex, currentByte & ~(1 << bitIndex))
   }
 
   // returns a NaN that is tagged as specified

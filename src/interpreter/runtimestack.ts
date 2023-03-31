@@ -14,13 +14,13 @@ export class RuntimeStack extends Memory {
   static ClosureSize = 4
 
   allocateClosure(pc: number, arity: number, env: number) {
-    const closure_index = this.free
+    const closureIndex = this.free
     this.free += RuntimeStack.ClosureSize
-    this.setTaggedNaNAtIndex(closure_index, RuntimeStack.ClosureTag)
-    this.setWordAtIndex(closure_index + RuntimeStack.ClosurePcOffset, pc)
-    this.setWordAtIndex(closure_index + RuntimeStack.ClosureArityOffset, arity)
-    this.setWordAtIndex(closure_index + RuntimeStack.ClosureEnvironmentOffset, env)
-    return this.makeAddress(closure_index)
+    this.setTaggedNaNAtIndex(closureIndex, RuntimeStack.ClosureTag)
+    this.setWordAtIndex(closureIndex + RuntimeStack.ClosurePcOffset, pc)
+    this.setWordAtIndex(closureIndex + RuntimeStack.ClosureArityOffset, arity)
+    this.setWordAtIndex(closureIndex + RuntimeStack.ClosureEnvironmentOffset, env)
+    return this.makeAddress(closureIndex)
   }
 
   getClosurePc(address: number) {
@@ -148,11 +148,11 @@ export class RuntimeStack extends Memory {
   static EnvironmentFramesOffset = 2
 
   allocateEnvironment(size: number) {
-    const env_index = this.free
+    const envIndex = this.free
     this.free += RuntimeStack.EnvironmentFramesOffset + size
-    this.setTaggedNaNAtIndex(env_index, RuntimeStack.EnvironmentTag)
-    this.setWordAtIndex(env_index + RuntimeStack.EnvironmentSizeOffset, size)
-    return this.makeAddress(env_index)
+    this.setTaggedNaNAtIndex(envIndex, RuntimeStack.EnvironmentTag)
+    this.setWordAtIndex(envIndex + RuntimeStack.EnvironmentSizeOffset, size)
+    return this.makeAddress(envIndex)
   }
 
   createGlobalEnvironment() {
@@ -207,10 +207,10 @@ export class RuntimeStack extends Memory {
   // enter the address of the new frame to end
   // of the new environment
   environmentExtend(frameAddress: number, envAddress: number) {
-    const old_size = this.getEnvironmentSize(envAddress)
-    const newEnvAddress = this.allocateEnvironment(old_size + 1)
+    const oldSize = this.getEnvironmentSize(envAddress)
+    const newEnvAddress = this.allocateEnvironment(oldSize + 1)
     let i
-    for (i = 0; i < old_size; i++) {
+    for (i = 0; i < oldSize; i++) {
       this.setEnvironmentFrame(newEnvAddress, i, this.getEnvironmentFrame(envAddress, i))
     }
     this.setEnvironmentFrame(newEnvAddress, i, frameAddress)
