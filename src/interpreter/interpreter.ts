@@ -1,9 +1,5 @@
 /* tslint:disable:max-classes-per-file */
-import exp from 'constants'
-import * as es from 'estree'
-import { result } from 'lodash'
 
-import { VariableRedeclaration } from '../errors/errors'
 import { RuntimeSourceError } from '../errors/runtimeSourceError'
 import {
   ApplicationInstruction,
@@ -20,7 +16,6 @@ import {
   DeclarationExpression,
   DeclarationInstruction,
   DeclarationNode,
-  Environment,
   EnvironmentRestoreInstruction,
   ExpressionListNode,
   ExpressionStatementNode,
@@ -40,9 +35,6 @@ import {
   TranslationUnitNode,
   Value
 } from '../types'
-import { declaration, identifier } from '../utils/astCreator'
-import { evaluateBinaryExpression, evaluateUnaryExpression } from '../utils/operators'
-import * as rttc from '../utils/rttc'
 import { RuntimeStack } from './runtimestack'
 
 // class Thunk {
@@ -422,7 +414,7 @@ const microcode = {
     interpreterContext.env = rts.environmentExtend(frameAddress, env)
 
     agenda.push({
-      tag: 'EnvironmentRestore',
+      tag: 'EnvironmentRestoreInstruction',
       env: [env, interpreterContext.env],
       variableLookupEnv
     })
@@ -500,11 +492,11 @@ const microcode = {
 
     // TODO: implement builtin here
     // if (func.tag == 'builtin') { }
-    if (agenda.length == 0 || (peek(agenda) as Command).tag == 'EnvironmentRestore') {
+    if (agenda.length == 0 || (peek(agenda) as Command).tag == 'EnvironmentRestoreInstruction') {
       agenda.push(markInstruction)
     } else {
       const eri: EnvironmentRestoreInstruction = {
-        tag: 'EnvironmentRestore',
+        tag: 'EnvironmentRestoreInstruction',
         env: [env, interpreterContext.env],
         variableLookupEnv
       }

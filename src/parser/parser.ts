@@ -9,7 +9,6 @@ import { ErrorNode } from 'antlr4ts/tree/ErrorNode'
 import { ParseTree } from 'antlr4ts/tree/ParseTree'
 import { RuleNode } from 'antlr4ts/tree/RuleNode'
 import { TerminalNode } from 'antlr4ts/tree/TerminalNode'
-import exp from 'constants'
 import * as es from 'estree'
 
 import { MockCLexer } from '../lang/MockCLexer'
