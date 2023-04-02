@@ -9,6 +9,7 @@ import { ErrorNode } from 'antlr4ts/tree/ErrorNode'
 import { ParseTree } from 'antlr4ts/tree/ParseTree'
 import { RuleNode } from 'antlr4ts/tree/RuleNode'
 import { TerminalNode } from 'antlr4ts/tree/TerminalNode'
+import exp from 'constants'
 import * as es from 'estree'
 
 import { MockCLexer } from '../lang/MockCLexer'
@@ -584,10 +585,21 @@ class NodeGenerator implements MockCVisitor<Node> {
 
   visitJumpStatement(ctx: JumpStatementContext): JumpStatementNode {
     const expressionList = ctx.expressionList()
-    if (expressionList) {
-      return {
-        tag: 'ReturnStatement',
-        exprs: expressionList.accept(this) as ExpressionListNode
+    const keyword = ctx.getChild(0).text
+    if (keyword == 'return') {
+      if (expressionList) {
+        return {
+          tag: 'ReturnStatement',
+          exprs: expressionList.accept(this) as ExpressionListNode
+        }
+      } else {
+        return {
+          tag: 'ReturnStatement',
+          exprs: {
+            tag: 'ExpressionList',
+            exprs: []
+          }
+        }
       }
     }
     return {

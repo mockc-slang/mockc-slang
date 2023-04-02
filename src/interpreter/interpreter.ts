@@ -1,4 +1,5 @@
 /* tslint:disable:max-classes-per-file */
+import exp from 'constants'
 import * as es from 'estree'
 import { result } from 'lodash'
 
@@ -22,6 +23,7 @@ import {
   Environment,
   EnvironmentRestoreInstruction,
   ExpressionListNode,
+  ExpressionStatementNode,
   ExternalDeclarationNode,
   FunctionApplicationNode,
   FunctionDefinitionNode,
@@ -458,6 +460,13 @@ const microcode = {
     if (nextInstr && nextInstr.tag != 'MarkInstruction') {
       agenda.push(cmd)
     }
+  },
+
+  ExpressionStatement: (cmd: Command, interpreterContext: InterpreterContext) => {
+    const { agenda } = interpreterContext
+    const { exprs } = cmd as ExpressionStatementNode
+    const orderedExprs = exprs.slice().reverse()
+    agenda.push(...orderedExprs)
   },
 
   FunctionApplication: (cmd: Command, interpreterContext: InterpreterContext) => {
