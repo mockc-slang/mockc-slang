@@ -236,9 +236,7 @@ export class Memory {
   }
 
   isClosure(x: number) {
-    return (
-      this.checkTag(x, Memory.AddressTag) && this.checkTag(this.addressDeref(x), Memory.ClosureTag)
-    )
+    return this.checkTag(x, Memory.ClosureTag)
   }
 
   wordToCValue(x: number): string {

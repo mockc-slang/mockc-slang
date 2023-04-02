@@ -8,33 +8,49 @@ export class RuntimeStack extends Memory {
 
   // closure
 
-  static ClosurePcOffset = 1 // TODO: no pc in explicit control. check this?
-  static ClosureArityOffset = 2
-  static ClosureEnvironmentOffset = 3
-  static ClosureSize = 4
+  // static ClosurePcOffset = 1
+  // static ClosureArityOffset = 2
+  // static ClosureEnvironmentOffset = 3
+  // static ClosureSize = 4
 
-  allocateClosure(pc: number, arity: number, env: number) {
-    const closureIndex = this.free
-    this.free += RuntimeStack.ClosureSize
-    this.setTaggedNaNAtIndex(closureIndex, RuntimeStack.ClosureTag)
-    this.setWordAtIndex(closureIndex + RuntimeStack.ClosurePcOffset, pc)
-    this.setWordAtIndex(closureIndex + RuntimeStack.ClosureArityOffset, arity)
-    this.setWordAtIndex(closureIndex + RuntimeStack.ClosureEnvironmentOffset, env)
-    return this.makeAddress(closureIndex)
+  // allocateClosure(pc: number, arity: number, env: number) {
+  //   const closureIndex = this.free
+  //   this.free += RuntimeStack.ClosureSize
+  //   this.setTaggedNaNAtIndex(closureIndex, RuntimeStack.ClosureTag)
+  //   this.setWordAtIndex(closureIndex + RuntimeStack.ClosurePcOffset, pc)
+  //   this.setWordAtIndex(closureIndex + RuntimeStack.ClosureArityOffset, arity)
+  //   this.setWordAtIndex(closureIndex + RuntimeStack.ClosureEnvironmentOffset, env)
+  //   return this.makeAddress(closureIndex)
+  // }
+
+  // getClosurePc(address: number) {
+  //   return this.getWordAtIndex(this.getIndexFromAddress(address) + RuntimeStack.ClosurePcOffset)
+  // }
+
+  // getClosureArity(address: number) {
+  //   return this.getWordAtIndex(this.getIndexFromAddress(address) + RuntimeStack.ClosureArityOffset)
+  // }
+
+  // getClosureEnvironment(address: number) {
+  //   return this.getWordAtIndex(
+  //     this.getIndexFromAddress(address) + RuntimeStack.ClosureEnvironmentOffset
+  //   )
+  // }
+
+  makeClosure(poolIndex: number) {
+    const address = this.makeTaggedNaN(RuntimeStack.ClosureTag)
+    const buf = new ArrayBuffer(8)
+    const view = new DataView(buf)
+    view.setFloat64(0, address)
+    view.setInt32(4, poolIndex)
+    return view.getFloat64(0)
   }
 
-  getClosurePc(address: number) {
-    return this.getWordAtIndex(this.getIndexFromAddress(address) + RuntimeStack.ClosurePcOffset)
-  }
-
-  getClosureArity(address: number) {
-    return this.getWordAtIndex(this.getIndexFromAddress(address) + RuntimeStack.ClosureArityOffset)
-  }
-
-  getClosureEnvironment(address: number) {
-    return this.getWordAtIndex(
-      this.getIndexFromAddress(address) + RuntimeStack.ClosureEnvironmentOffset
-    )
+  getClosurePoolIndex(closureNaN: number) {
+    const buf = new ArrayBuffer(8)
+    const view = new DataView(buf)
+    view.setFloat64(0, closureNaN)
+    return view.getInt32(4)
   }
 
   // block frame
@@ -50,7 +66,7 @@ export class RuntimeStack extends Memory {
     return this.makeAddress(frameIndex)
   }
 
-  getBlockgrameEnvironment(address: number) {
+  getBlockframeEnvironment(address: number) {
     return this.getWordAtIndex(
       this.getIndexFromAddress(address) + RuntimeStack.BlockframeEnvironmentOffset
     )
@@ -156,8 +172,7 @@ export class RuntimeStack extends Memory {
   }
 
   createGlobalEnvironment() {
-    // TODO: add builtin functions here
-    // heap_Environment_extend(frame_address, heap_empty_Environment)
+    // TODO: add builtin functions here, by extending one more frame
     return this.allocateEnvironment(0)
   }
 
