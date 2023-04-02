@@ -8,35 +8,6 @@ export class RuntimeStack extends Memory {
 
   // closure
 
-  // static ClosurePcOffset = 1
-  // static ClosureArityOffset = 2
-  // static ClosureEnvironmentOffset = 3
-  // static ClosureSize = 4
-
-  // allocateClosure(pc: number, arity: number, env: number) {
-  //   const closureIndex = this.free
-  //   this.free += RuntimeStack.ClosureSize
-  //   this.setTaggedNaNAtIndex(closureIndex, RuntimeStack.ClosureTag)
-  //   this.setWordAtIndex(closureIndex + RuntimeStack.ClosurePcOffset, pc)
-  //   this.setWordAtIndex(closureIndex + RuntimeStack.ClosureArityOffset, arity)
-  //   this.setWordAtIndex(closureIndex + RuntimeStack.ClosureEnvironmentOffset, env)
-  //   return this.makeAddress(closureIndex)
-  // }
-
-  // getClosurePc(address: number) {
-  //   return this.getWordAtIndex(this.getIndexFromAddress(address) + RuntimeStack.ClosurePcOffset)
-  // }
-
-  // getClosureArity(address: number) {
-  //   return this.getWordAtIndex(this.getIndexFromAddress(address) + RuntimeStack.ClosureArityOffset)
-  // }
-
-  // getClosureEnvironment(address: number) {
-  //   return this.getWordAtIndex(
-  //     this.getIndexFromAddress(address) + RuntimeStack.ClosureEnvironmentOffset
-  //   )
-  // }
-
   makeClosure(poolIndex: number) {
     const address = this.makeTaggedNaN(RuntimeStack.ClosureTag)
     const buf = new ArrayBuffer(8)
