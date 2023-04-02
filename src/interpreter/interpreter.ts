@@ -621,20 +621,10 @@ const microcode = {
   }
 }
 
-export function* evaluate(node: Node, context: Context) {
-  // const result = yield* evaluators[node.type](node, context)
-  // yield* leave(context)
-  // return result
-  const step_limit = 1000000
+function runInterpreter(context: Context, interpreterContext: InterpreterContext) {
+  context.runtime.break = false
 
-  const interpreterContext: InterpreterContext = {
-    agenda: [node],
-    stash: [],
-    rts: new RuntimeStack(10),
-    env: 0,
-    variableLookupEnv: [], // TODO: add primitives / builtins here
-    closurePool: []
-  }
+  const step_limit = 1000000
 
   const { stash, agenda, rts } = interpreterContext
 
@@ -654,4 +644,30 @@ export function* evaluate(node: Node, context: Context) {
   if (stash.length > 1 || stash.length < 1)
     throw new Error('internal error: stash must be singleton')
   return stash[0]
+}
+
+export function* evaluate(node: Node, context: Context) {
+  // const result = yield* evaluators[node.type](node, context)
+  // yield* leave(context)
+  // return result
+  try {
+    context.runtime.isRunning = true
+
+    const interpreterContext: InterpreterContext = {
+      agenda: [node],
+      stash: [],
+      rts: new RuntimeStack(10),
+      env: 0,
+      variableLookupEnv: [], // TODO: add primitives / builtins here
+      closurePool: []
+    }
+
+    interpreterContext.env = interpreterContext.rts.createGlobalEnvironment()
+
+    return runInterpreter(context, interpreterContext)
+  } catch (error) {
+    return error
+  } finally {
+    context.runtime.isRunning = false
+  }
 }
