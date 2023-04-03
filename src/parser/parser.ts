@@ -584,12 +584,17 @@ class NodeGenerator implements MockCVisitor<Node> {
 
   visitJumpStatement(ctx: JumpStatementContext): JumpStatementNode {
     const expressionList = ctx.expressionList()
-    if (expressionList) {
+    const keyword = ctx.getChild(0).text
+    if (keyword == 'return') {
       return {
         tag: 'ReturnStatement',
-        exprs: expressionList.accept(this) as ExpressionListNode
+        exprs: (ctx.expressionList()?.accept(this) as ExpressionListNode) || {
+          tag: 'ExpressionList',
+          exprs: []
+        }
       }
     }
+
     return {
       tag: 'BreakStatement'
     }

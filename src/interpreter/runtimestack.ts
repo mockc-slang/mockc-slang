@@ -8,33 +8,20 @@ export class RuntimeStack extends Memory {
 
   // closure
 
-  static ClosurePcOffset = 1 // TODO: no pc in explicit control. check this?
-  static ClosureArityOffset = 2
-  static ClosureEnvironmentOffset = 3
-  static ClosureSize = 4
-
-  allocateClosure(pc: number, arity: number, env: number) {
-    const closure_index = this.free
-    this.free += RuntimeStack.ClosureSize
-    this.setTaggedNaNAtIndex(closure_index, RuntimeStack.ClosureTag)
-    this.setWordAtIndex(closure_index + RuntimeStack.ClosurePcOffset, pc)
-    this.setWordAtIndex(closure_index + RuntimeStack.ClosureArityOffset, arity)
-    this.setWordAtIndex(closure_index + RuntimeStack.ClosureEnvironmentOffset, env)
-    return this.makeAddress(closure_index)
+  makeClosure(poolIndex: number) {
+    const address = this.makeTaggedNaN(RuntimeStack.ClosureTag)
+    const buf = new ArrayBuffer(8)
+    const view = new DataView(buf)
+    view.setFloat64(0, address)
+    view.setInt32(4, poolIndex)
+    return view.getFloat64(0)
   }
 
-  getClosurePc(address: number) {
-    return this.getWordAtIndex(this.getIndexFromAddress(address) + RuntimeStack.ClosurePcOffset)
-  }
-
-  getClosureArity(address: number) {
-    return this.getWordAtIndex(this.getIndexFromAddress(address) + RuntimeStack.ClosureArityOffset)
-  }
-
-  getClosureEnvironment(address: number) {
-    return this.getWordAtIndex(
-      this.getIndexFromAddress(address) + RuntimeStack.ClosureEnvironmentOffset
-    )
+  getClosurePoolIndex(closureNaN: number) {
+    const buf = new ArrayBuffer(8)
+    const view = new DataView(buf)
+    view.setFloat64(0, closureNaN)
+    return view.getInt32(4)
   }
 
   // block frame
@@ -50,7 +37,7 @@ export class RuntimeStack extends Memory {
     return this.makeAddress(frameIndex)
   }
 
-  getBlockgrameEnvironment(address: number) {
+  getBlockframeEnvironment(address: number) {
     return this.getWordAtIndex(
       this.getIndexFromAddress(address) + RuntimeStack.BlockframeEnvironmentOffset
     )
@@ -148,16 +135,15 @@ export class RuntimeStack extends Memory {
   static EnvironmentFramesOffset = 2
 
   allocateEnvironment(size: number) {
-    const env_index = this.free
+    const envIndex = this.free
     this.free += RuntimeStack.EnvironmentFramesOffset + size
-    this.setTaggedNaNAtIndex(env_index, RuntimeStack.EnvironmentTag)
-    this.setWordAtIndex(env_index + RuntimeStack.EnvironmentSizeOffset, size)
-    return this.makeAddress(env_index)
+    this.setTaggedNaNAtIndex(envIndex, RuntimeStack.EnvironmentTag)
+    this.setWordAtIndex(envIndex + RuntimeStack.EnvironmentSizeOffset, size)
+    return this.makeAddress(envIndex)
   }
 
   createGlobalEnvironment() {
-    // TODO: add builtin functions here
-    // heap_Environment_extend(frame_address, heap_empty_Environment)
+    // TODO: add builtin functions here, by extending one more frame
     return this.allocateEnvironment(0)
   }
 
@@ -207,10 +193,10 @@ export class RuntimeStack extends Memory {
   // enter the address of the new frame to end
   // of the new environment
   environmentExtend(frameAddress: number, envAddress: number) {
-    const old_size = this.getEnvironmentSize(envAddress)
-    const newEnvAddress = this.allocateEnvironment(old_size + 1)
+    const oldSize = this.getEnvironmentSize(envAddress)
+    const newEnvAddress = this.allocateEnvironment(oldSize + 1)
     let i
-    for (i = 0; i < old_size; i++) {
+    for (i = 0; i < oldSize; i++) {
       this.setEnvironmentFrame(newEnvAddress, i, this.getEnvironmentFrame(envAddress, i))
     }
     this.setEnvironmentFrame(newEnvAddress, i, frameAddress)

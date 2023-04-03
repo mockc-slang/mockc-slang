@@ -390,6 +390,11 @@ export type Command =
   | BranchInstruction
   | BinaryOpInstruction
   | PopInstruction
+  | EnvironmentRestoreInstruction
+  | MarkInstruction
+  | ResetInstruction
+  | ApplicationInstruction
+  | ClosureExpression
 
 export type DeclarationExpression = {
   tag: 'DeclarationExpression'
@@ -404,8 +409,8 @@ export type DeclarationInstruction = {
 
 export type LambdaExpression = {
   tag: 'LambdaExpression'
-  prms: Command | undefined
-  body: Command
+  prms: ParameterListNode
+  body: CompoundStatementNode
 }
 
 export type BranchInstruction = {
@@ -421,6 +426,32 @@ export type BinaryOpInstruction = {
 
 export type PopInstruction = {
   tag: 'Pop'
+}
+
+export type EnvironmentRestoreInstruction = {
+  tag: 'EnvironmentRestoreInstruction'
+  // [oldEnv, newEnv], array is used to avoid NaN malform
+  env: number[]
+  variableLookupEnv: string[][]
+}
+
+export type MarkInstruction = {
+  tag: 'MarkInstruction'
+}
+
+export type ResetInstruction = {
+  tag: 'ResetInstruction'
+}
+
+export type ApplicationInstruction = {
+  tag: 'ApplicationInstruction'
+  arity: number
+}
+
+export type ClosureExpression = {
+  tag: 'Closure'
+  prms: ParameterListNode
+  body: CompoundStatementNode
 }
 
 export type Node =

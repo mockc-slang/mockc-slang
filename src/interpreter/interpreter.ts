@@ -1,33 +1,40 @@
 /* tslint:disable:max-classes-per-file */
-import * as es from 'estree'
-import { result } from 'lodash'
 
 import { RuntimeSourceError } from '../errors/runtimeSourceError'
 import {
+  ApplicationInstruction,
   AssignmentExpressionNode,
   BinaryOpExpressionNode,
   BinaryOpInstruction,
   BranchInstruction,
+  ClosureExpression,
   Command,
   CompilationUnitNode,
+  CompoundStatementNode,
   ConditionalExpressionNode,
   Context,
   DeclarationExpression,
   DeclarationInstruction,
   DeclarationNode,
+  EnvironmentRestoreInstruction,
   ExpressionListNode,
+  ExpressionStatementNode,
   ExternalDeclarationNode,
+  FunctionApplicationNode,
   FunctionDefinitionNode,
+  IdentifierNode,
   LambdaExpression,
+  MarkInstruction,
   Node,
   NumberNode,
+  ParameterDeclarationNode,
+  ParameterListNode,
   PopInstruction,
+  ResetInstruction,
+  ReturnStatementNode,
   TranslationUnitNode,
   Value
 } from '../types'
-import { identifier } from '../utils/astCreator'
-import { evaluateBinaryExpression, evaluateUnaryExpression } from '../utils/operators'
-import * as rttc from '../utils/rttc'
 import { RuntimeStack } from './runtimestack'
 
 // class Thunk {
@@ -229,6 +236,7 @@ type InterpreterContext = {
   rts: RuntimeStack
   env: number
   variableLookupEnv: string[][]
+  closurePool: ClosureExpression[]
 }
 
 const declare = (sym: string, val: Value, interpreterContext: InterpreterContext) => {
@@ -257,6 +265,14 @@ const scanDeclarations = (cmds: Command[]): string[] => {
   return locals
 }
 
+const scanParameters = (paramList: ParameterListNode): string[] => {
+  const params: string[] = []
+  paramList.parameters.forEach((prm: ParameterDeclarationNode) => {
+    params.push(prm.declarator.directDeclarator.identifier)
+  })
+  return params
+}
+
 const extendVariableLookupEnv = (locals: string[], lookupEnv: string[][]) => {
   // returns a shallow copy
   const newEnv = [...lookupEnv]
@@ -283,6 +299,8 @@ const applyBinaryOp = (sym: string, leftOperand: Value, rightOperand: Value): Va
   binaryOpMicrocode[sym](leftOperand, rightOperand)
 
 const popInstruction: PopInstruction = { tag: 'Pop' }
+const markInstruction: MarkInstruction = { tag: 'MarkInstruction' }
+const resetInstruction: ResetInstruction = { tag: 'ResetInstruction' }
 
 const binaryOpMicrocode = {
   '+': (x: number, y: number) => x + y,
@@ -326,7 +344,11 @@ const microcode = {
       externalDeclarationCmds.push(node)
       externalDeclarationCmds.push(popInstruction)
     })
-    externalDeclarationCmds.pop()
+
+    if (locals.includes('main')) {
+      externalDeclarationCmds.push({ tag: 'FunctionApplication', identifier: 'main', params: [] })
+    }
+
     externalDeclarationCmds.reverse()
     agenda.push(...externalDeclarationCmds)
   },
@@ -349,17 +371,21 @@ const microcode = {
   },
 
   LambdaExpression: (cmd: Command, interpreterContext: InterpreterContext) => {
-    const { stash } = interpreterContext
-
+    const { stash, rts, closurePool } = interpreterContext
     const { prms, body } = cmd as LambdaExpression
-    stash.push({ tag: 'Closure', prms, body })
+
+    // push closure to closure pool, create a closure Tag
+    // with payload as index to closure pool
+    // similar to how String is implemented in realistic VM
+    closurePool.push({ tag: 'Closure', prms, body })
+    const closureNaN = rts.makeClosure(closurePool.length - 1)
+    stash.push(closureNaN)
   },
 
   ExternalDeclaration: (cmd: Command, interpreterContext: InterpreterContext) => {
-    const { agenda, stash } = interpreterContext
-
+    const { agenda } = interpreterContext
     const { functionDefinition, declaration } = cmd as ExternalDeclarationNode
-    // TODO: handle function definition
+
     if (functionDefinition) agenda.push(functionDefinition)
     if (declaration) agenda.push(declaration)
   },
@@ -382,6 +408,108 @@ const microcode = {
     }
   },
 
+  CompoundStatement: (cmd: Command, interpreterContext: InterpreterContext) => {
+    const { agenda, variableLookupEnv, rts, env } = interpreterContext
+    const { statements } = cmd as CompoundStatementNode
+
+    const locals = scanDeclarations(statements)
+    interpreterContext.variableLookupEnv = extendVariableLookupEnv(locals, variableLookupEnv)
+    const frameAddress = rts.allocateFrame(locals.length)
+    interpreterContext.env = rts.environmentExtend(frameAddress, env)
+
+    agenda.push({
+      tag: 'EnvironmentRestoreInstruction',
+      env: [env, interpreterContext.env],
+      variableLookupEnv
+    })
+
+    const orderedStatements: Command[] = []
+    statements.forEach(node => {
+      orderedStatements.push(node)
+      orderedStatements.push(popInstruction)
+    })
+    orderedStatements.pop()
+    orderedStatements.reverse()
+    agenda.push(...orderedStatements)
+  },
+
+  EnvironmentRestoreInstruction: (cmd: Command, interpreterContext: InterpreterContext) => {
+    const { env, variableLookupEnv } = cmd as EnvironmentRestoreInstruction
+    const { agenda, rts } = interpreterContext
+    interpreterContext.env = env[0]
+    interpreterContext.variableLookupEnv = variableLookupEnv
+    // TODO: implement RTS shrinking/deallocation here
+  },
+
+  ReturnStatement: (cmd: Command, interpreterContext: InterpreterContext) => {
+    const { agenda } = interpreterContext
+    const { exprs } = (cmd as ReturnStatementNode).exprs
+    agenda.push(resetInstruction)
+    const orderedExprs = exprs.slice().reverse()
+    agenda.push(...orderedExprs)
+  },
+
+  ResetInstruction: (cmd: Command, interpreterContext: InterpreterContext) => {
+    // TODO: check for env restore when popping, for RTS restoration
+    const { agenda } = interpreterContext
+    const nextInstr = agenda.pop()
+    if (nextInstr && nextInstr.tag != 'MarkInstruction') {
+      agenda.push(cmd)
+    }
+  },
+
+  ExpressionStatement: (cmd: Command, interpreterContext: InterpreterContext) => {
+    const { agenda } = interpreterContext
+    const { exprs } = cmd as ExpressionStatementNode
+    const orderedExprs = exprs.slice().reverse()
+    agenda.push(...orderedExprs)
+  },
+
+  FunctionApplication: (cmd: Command, interpreterContext: InterpreterContext) => {
+    const { agenda } = interpreterContext
+    const { identifier: functionName, params } = cmd as FunctionApplicationNode
+    agenda.push({ tag: 'ApplicationInstruction', arity: params.length })
+
+    const orderedParams = params.slice().reverse()
+    agenda.push(...orderedParams)
+
+    agenda.push({ tag: 'Identifier', val: functionName })
+  },
+
+  ApplicationInstruction: (cmd: Command, interpreterContext: InterpreterContext) => {
+    const { stash, env, agenda, variableLookupEnv, rts } = interpreterContext
+    const { arity } = cmd as ApplicationInstruction
+
+    const args = []
+    for (let i = arity - 1; i >= 0; i--) {
+      args[i] = stash.pop()
+    }
+
+    const func = stash.pop() as ClosureExpression
+    const params = scanParameters(func.prms)
+    interpreterContext.variableLookupEnv = extendVariableLookupEnv(params, variableLookupEnv)
+    const frameAddress = rts.allocateFrame(params.length)
+    interpreterContext.env = rts.environmentExtend(frameAddress, env)
+    for (let i = 0; i < arity; i++) {
+      rts.setFrameValue(frameAddress, i, args[i])
+    }
+
+    // TODO: implement builtin here
+    // if (func.tag == 'builtin') { }
+    if (agenda.length == 0 || (peek(agenda) as Command).tag == 'EnvironmentRestoreInstruction') {
+      agenda.push(markInstruction)
+    } else {
+      const eri: EnvironmentRestoreInstruction = {
+        tag: 'EnvironmentRestoreInstruction',
+        env: [env, interpreterContext.env],
+        variableLookupEnv
+      }
+      agenda.push(eri)
+      agenda.push(markInstruction)
+    }
+    agenda.push(func.body)
+  },
+
   DeclarationExpression: (cmd: Command, interpreterContext: InterpreterContext) => {
     const { agenda } = interpreterContext
 
@@ -397,7 +525,6 @@ const microcode = {
 
   DeclarationInstruction: (cmd: Command, interpreterContext: InterpreterContext) => {
     const { stash, rts } = interpreterContext
-
     const { sym } = cmd as DeclarationInstruction
     declare(sym, peek(stash), interpreterContext)
   },
@@ -409,6 +536,21 @@ const microcode = {
     const { expr } = cmd as AssignmentExpressionNode
     if (expr) {
       agenda.push(expr)
+    }
+  },
+
+  Identifier: (cmd: Command, interpreterContext: InterpreterContext) => {
+    const { variableLookupEnv, stash, rts, env, closurePool } = interpreterContext
+    const { val: sym } = cmd as IdentifierNode
+
+    const pos = lookupVairable(sym, variableLookupEnv)
+    const val = rts.getEnvironmentValue(env, pos)
+
+    if (rts.isClosure(val)) {
+      const closurePoolIndex = rts.getClosurePoolIndex(val)
+      stash.push(closurePool[closurePoolIndex])
+    } else {
+      stash.push(val)
     }
   },
 
@@ -475,19 +617,10 @@ const microcode = {
   }
 }
 
-export function* evaluate(node: Node, context: Context) {
-  // const result = yield* evaluators[node.type](node, context)
-  // yield* leave(context)
-  // return result
-  const step_limit = 1000000
+function runInterpreter(context: Context, interpreterContext: InterpreterContext) {
+  context.runtime.break = false
 
-  const interpreterContext: InterpreterContext = {
-    agenda: [node],
-    stash: [],
-    rts: new RuntimeStack(10),
-    env: 0,
-    variableLookupEnv: [[]] // TODO: add primitives / builtins here
-  }
+  const step_limit = 1000000
 
   const { stash, agenda, rts } = interpreterContext
 
@@ -507,4 +640,30 @@ export function* evaluate(node: Node, context: Context) {
   if (stash.length > 1 || stash.length < 1)
     throw new Error('internal error: stash must be singleton')
   return stash[0]
+}
+
+export function* evaluate(node: Node, context: Context) {
+  // const result = yield* evaluators[node.type](node, context)
+  // yield* leave(context)
+  // return result
+  try {
+    context.runtime.isRunning = true
+
+    const interpreterContext: InterpreterContext = {
+      agenda: [node],
+      stash: [],
+      rts: new RuntimeStack(10),
+      env: 0,
+      variableLookupEnv: [], // TODO: add primitives / builtins here
+      closurePool: []
+    }
+
+    interpreterContext.env = interpreterContext.rts.createGlobalEnvironment()
+
+    return runInterpreter(context, interpreterContext)
+  } catch (error) {
+    return error
+  } finally {
+    context.runtime.isRunning = false
+  }
 }
