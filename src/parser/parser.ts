@@ -586,21 +586,15 @@ class NodeGenerator implements MockCVisitor<Node> {
     const expressionList = ctx.expressionList()
     const keyword = ctx.getChild(0).text
     if (keyword == 'return') {
-      if (expressionList) {
-        return {
-          tag: 'ReturnStatement',
-          exprs: expressionList.accept(this) as ExpressionListNode
-        }
-      } else {
-        return {
-          tag: 'ReturnStatement',
-          exprs: {
-            tag: 'ExpressionList',
-            exprs: []
-          }
+      return {
+        tag: 'ReturnStatement',
+        exprs: (ctx.expressionList()?.accept(this) as ExpressionListNode) || {
+          tag: 'ExpressionList',
+          exprs: []
         }
       }
     }
+
     return {
       tag: 'BreakStatement'
     }
