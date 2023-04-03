@@ -344,7 +344,11 @@ const microcode = {
       externalDeclarationCmds.push(node)
       externalDeclarationCmds.push(popInstruction)
     })
-    externalDeclarationCmds.push({ tag: 'FunctionApplication', identifier: 'main', params: [] })
+
+    if (locals.includes('main')) {
+      externalDeclarationCmds.push({ tag: 'FunctionApplication', identifier: 'main', params: [] })
+    }
+
     externalDeclarationCmds.reverse()
     agenda.push(...externalDeclarationCmds)
   },
@@ -429,7 +433,7 @@ const microcode = {
     agenda.push(...orderedStatements)
   },
 
-  EnvironmentRestore: (cmd: Command, interpreterContext: InterpreterContext) => {
+  EnvironmentRestoreInstruction: (cmd: Command, interpreterContext: InterpreterContext) => {
     const { env, variableLookupEnv } = cmd as EnvironmentRestoreInstruction
     const { agenda, rts } = interpreterContext
     interpreterContext.env = env[0]
