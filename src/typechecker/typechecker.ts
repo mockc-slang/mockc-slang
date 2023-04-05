@@ -95,22 +95,6 @@ function isSameType(a: TypeAssignment, b: TypeAssignment): boolean {
   return false
 }
 
-function isInt(assignment: TypeAssignment) {
-  if (!assignment) return false
-  if (assignment.tag != 'Variable') {
-    return false
-  }
-  return assignment.type == 'int'
-}
-
-function isChar(assignment: TypeAssignment) {
-  if (!assignment) return false
-  if (assignment.tag != 'Variable') {
-    return false
-  }
-  return assignment.type == 'char'
-}
-
 function extendEnvironment(E: TypeEnvironment) {
   E.push({})
 }
@@ -119,11 +103,11 @@ function exitEnvironment(E: TypeEnvironment) {
   E.pop()
 }
 
-function assignIdentifierType(E: TypeEnvironment, identifier: string, type: TypeAssignment) {
+function assignIdentifierType(identifier: string, type: TypeAssignment, E: TypeEnvironment) {
   E[E.length - 1][identifier] = type
 }
 
-function checkIdentifierType(E: TypeEnvironment, identifier: string): IdentifierTypeAssignment {
+function checkIdentifierType(identifier: string, E: TypeEnvironment): IdentifierTypeAssignment {
   for (let i = E.length - 1; i >= 0; i--) {
     const type = E[i][identifier]
     if (!type) {
@@ -154,7 +138,7 @@ function checkSymType(
   switch (sym) {
     case '+':
     case '-':
-      if (!isInt(leftExprType) || !isInt(rightExprType)) {
+      if (!isSameType(leftExprType, INT_TYPE) || !isSameType(rightExprType, INT_TYPE)) {
         throw new FatalTypeError(
           {
             start: {
@@ -232,7 +216,7 @@ function check(node: Node | undefined, E: TypeEnvironment): TypeAssignment {
         )}`
       )
     }
-    assignIdentifierType(E, identifier, declaredType)
+    assignIdentifierType(identifier, declaredType, E)
     return
   }
 
@@ -243,7 +227,7 @@ function check(node: Node | undefined, E: TypeEnvironment): TypeAssignment {
 
   if (tag == 'AssignmentExpression') {
     const { identifier, sym, expr } = node
-    const identifierType = checkIdentifierType(E, identifier)
+    const identifierType = checkIdentifierType(identifier, E)
     const exprType = check(expr, E)
 
     if (sym == '=') {
@@ -271,7 +255,7 @@ function check(node: Node | undefined, E: TypeEnvironment): TypeAssignment {
   if (tag == 'ConditionalExpression') {
     const { pred, cons, alt } = node
     const predType = check(pred, E)
-    if (!isInt(predType)) {
+    if (!isSameType(predType, INT_TYPE)) {
       throw new FatalTypeError(
         {
           start: {
@@ -332,10 +316,10 @@ function check(node: Node | undefined, E: TypeEnvironment): TypeAssignment {
       parameterTypes: [],
       returnType
     }
-    assignIdentifierType(E, identifier, closureType)
+    assignIdentifierType(identifier, closureType, E)
     extendEnvironment(E)
     closureType.parameterTypes = parameters.map(param => check(param, E)) // Only check params after extending environment
-    const actualReturnType = check(compoundStatement, E)
+    const actualReturnType = check(compoundStatement, E) || VOID_TYPE
     if (!isSameType(returnType, actualReturnType)) {
       throw new FatalTypeError(
         {
@@ -365,7 +349,7 @@ function check(node: Node | undefined, E: TypeEnvironment): TypeAssignment {
       }
     } = node
     const parameterType = getVariableTypeFromString(type)
-    assignIdentifierType(E, identifier, parameterType)
+    assignIdentifierType(identifier, parameterType, E)
     return parameterType
   }
 
@@ -406,12 +390,12 @@ function check(node: Node | undefined, E: TypeEnvironment): TypeAssignment {
       return acc
     }, undefined)
     exitEnvironment(E)
-    return returnType || VOID_TYPE
+    return returnType
   }
 
   if (tag == 'FunctionApplication') {
     const { identifier, params } = node
-    const identifierType = checkIdentifierType(E, identifier)
+    const identifierType = checkIdentifierType(identifier, E)
     if (identifierType.tag == 'Variable') {
       throw new FatalTypeError(
         {
@@ -483,7 +467,53 @@ function check(node: Node | undefined, E: TypeEnvironment): TypeAssignment {
 
   if (tag == 'Identifier') {
     const { val } = node
-    return checkIdentifierType(E, val)
+    return checkIdentifierType(val, E)
+  }
+
+  if (tag == 'SelectionStatement') {
+    const { pred, cons, alt } = node
+    const predType = check(pred, E)
+    if (!isSameType(predType, INT_TYPE)) {
+      throw new FatalTypeError(
+        {
+          start: {
+            line: 0,
+            column: 0
+          },
+          end: {
+            line: 0,
+            column: 0
+          }
+        },
+        `Predicate expects ${toString(INT_TYPE)}: instead found ${toString(predType)} instead`
+      )
+    }
+    const consType = check(cons, E)
+    if (alt) {
+      const altType = check(alt, E)
+      if (!altType || !consType) {
+        return
+      }
+      if (!isSameType(altType, consType)) {
+        throw new FatalTypeError(
+          {
+            start: {
+              line: 0,
+              column: 0
+            },
+            end: {
+              line: 0,
+              column: 0
+            }
+          },
+          `Selection statement return types must be consistent: instead found ${toString(
+            consType
+          )} and ${toString(altType)}`
+        )
+      }
+      return consType
+    }
+    return
   }
 
   throw new FatalTypeError(

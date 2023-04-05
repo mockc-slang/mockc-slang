@@ -32,6 +32,7 @@ import {
   PopInstruction,
   ResetInstruction,
   ReturnStatementNode,
+  SelectionStatementNode,
   TranslationUnitNode,
   Value
 } from '../types'
@@ -284,6 +285,9 @@ const lookupVairable = (sym: string, lookupEnv: string[][]) => {
   let frameIndex = lookupEnv.length
   let valueIndex = -1
   while (valueIndex == -1) {
+    if (frameIndex == 0) {
+      throw new Error(`undefined reference to ${sym}`)
+    }
     const frame = lookupEnv[--frameIndex]
     for (let i = 0; i < frame.length; i++) {
       if (frame[i] === sym) {
@@ -309,7 +313,7 @@ const binaryOpMicrocode = {
 
 const pop = (stash: Value[]) => {
   const val = stash.pop()
-  if (!val) {
+  if (val == undefined) {
     throw Error('internal error: expected value from stash')
   }
   return val
@@ -345,10 +349,7 @@ const microcode = {
       externalDeclarationCmds.push(popInstruction)
     })
 
-    if (locals.includes('main')) {
-      externalDeclarationCmds.push({ tag: 'FunctionApplication', identifier: 'main', params: [] })
-    }
-
+    externalDeclarationCmds.push({ tag: 'FunctionApplication', identifier: 'main', params: [] })
     externalDeclarationCmds.reverse()
     agenda.push(...externalDeclarationCmds)
   },
@@ -556,8 +557,20 @@ const microcode = {
 
   ConditionalExpression: (cmd: Command, interpreterContext: InterpreterContext) => {
     const { agenda } = interpreterContext
-
     const { pred, cons, alt } = cmd as ConditionalExpressionNode
+    agenda.push(
+      {
+        tag: 'BranchInstruction',
+        cons,
+        alt
+      },
+      pred
+    )
+  },
+
+  SelectionStatement: (cmd: Command, interpreterContext: InterpreterContext) => {
+    const { agenda } = interpreterContext
+    const { pred, cons, alt } = cmd as SelectionStatementNode
     agenda.push(
       {
         tag: 'BranchInstruction',
@@ -572,8 +585,14 @@ const microcode = {
     const { agenda, stash } = interpreterContext
 
     const { cons, alt } = cmd as BranchInstruction
-    agenda.push(pop(stash) !== 0 ? cons : alt)
+    if (pop(stash) !== 0) {
+      agenda.push(cons)
+    } else if (alt) {
+      agenda.push(alt)
+    }
   },
+
+  MarkInstruction: (cmd: Command, interpreterContext: InterpreterContext) => {},
 
   BinaryOpExpression: (cmd: Command, interpreterContext: InterpreterContext) => {
     const { agenda } = interpreterContext
