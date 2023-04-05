@@ -119,10 +119,7 @@ expressionStatement: expressionList? ';';
 selectionStatement:
 	'if' '(' expressionList ')' statement ('else' statement)?;
 iterationStatement:
-	'while' '(' expressionList ')' statement
-	| 'do' statement 'while' '(' expressionList ')' ';'
-	| 'for' '(' (declaration | expressionList)? ';' expressionList? ';' expressionList? ')'
-		statement;
+	'while' '(' expressionList ')' statement;
 jumpStatement:
 	'continue' ';'
 	| 'break' ';'

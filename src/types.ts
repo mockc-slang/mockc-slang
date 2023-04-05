@@ -385,8 +385,12 @@ export type TypeEnvironment = {
 export type Command =
   | Node
   | DeclarationExpression
-  | DeclarationInstruction
   | LambdaExpression
+  | ClosureExpression
+  | Instruction
+
+export type Instruction =
+  | DeclarationInstruction
   | BranchInstruction
   | BinaryOpInstruction
   | PopInstruction
@@ -394,7 +398,13 @@ export type Command =
   | MarkInstruction
   | ResetInstruction
   | ApplicationInstruction
-  | ClosureExpression
+  | WhileInstruction
+
+export type WhileInstruction = {
+  tag: 'WhileInstruction'
+  pred: ExpressionListNode
+  body: StatementNode
+}
 
 export type DeclarationExpression = {
   tag: 'DeclarationExpression'
@@ -487,6 +497,8 @@ export type StatementNode =
   | IterationStatementNode
   | JumpStatementNode
 
+export type IterationStatementNode = WhileStatementNode
+
 export type JumpStatementNode = BreakStatementNode | ContinueStatementNode | ReturnStatementNode
 
 export type CompilationUnitNode = {
@@ -509,7 +521,7 @@ export type FunctionDefinitionNode = {
   tag: 'FunctionDefinition'
   type: string
   declarator: DeclaratorNode
-  compoundStatement: CompoundStatementNode
+  body: CompoundStatementNode
 }
 
 export type DeclarationNode = {
@@ -547,8 +559,10 @@ export type SelectionStatementNode = {
   alt?: StatementNode
 }
 
-export type IterationStatementNode = {
-  tag: 'IterationStatement'
+export type WhileStatementNode = {
+  tag: 'WhileStatement'
+  pred: ExpressionListNode
+  body: StatementNode
 }
 
 export type BreakStatementNode = {
