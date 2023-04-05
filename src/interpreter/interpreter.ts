@@ -4,6 +4,7 @@ import { RuntimeSourceError } from '../errors/runtimeSourceError'
 import {
   ApplicationInstruction,
   AssignmentExpressionNode,
+  AssignmentInstruction,
   BinaryOpExpressionNode,
   BinaryOpInstruction,
   BranchInstruction,
@@ -14,7 +15,6 @@ import {
   ConditionalExpressionNode,
   Context,
   DeclarationExpression,
-  DeclarationInstruction,
   DeclarationNode,
   EnvironmentRestoreInstruction,
   ExpressionListNode,
@@ -246,7 +246,7 @@ const isTrue = (val: any) => {
   return val !== 0
 }
 
-const declare = (identifier: string, val: Value, interpreterContext: InterpreterContext) => {
+const assign = (identifier: string, val: Value, interpreterContext: InterpreterContext) => {
   const { variableLookupEnv, env, rts } = interpreterContext
   const pos = lookupVairable(identifier, variableLookupEnv)
   rts.setEnvironmentValue(env, pos, val)
@@ -352,7 +352,6 @@ const microcode = {
     const externalDeclarationCmds: Command[] = []
     externalDeclarations.forEach(node => {
       externalDeclarationCmds.push(node)
-      externalDeclarationCmds.push(popInstruction)
     })
 
     externalDeclarationCmds.push({ tag: 'FunctionApplication', identifier: 'main', params: [] })
@@ -366,7 +365,7 @@ const microcode = {
     const { type, declarator, body } = cmd as FunctionDefinitionNode
     const { directDeclarator } = declarator // TODO: handle pointer
     const { identifier, parameterList } = directDeclarator
-    agenda.push({ tag: 'Number', val: 0 }, popInstruction, {
+    agenda.push({
       tag: 'DeclarationExpression',
       identifier,
       expr: {
@@ -400,14 +399,13 @@ const microcode = {
   Declaration: (cmd: Command, interpreterContext: InterpreterContext) => {
     const { agenda } = interpreterContext
 
-    const type = (cmd as DeclarationNode).type
     const { identifier, initializer } = cmd as DeclarationNode
     if (!initializer) {
       // TODO: handle identifier only situation
       return
     }
     if (initializer.expr) {
-      agenda.push({ tag: 'Number', val: 0 }, popInstruction, {
+      agenda.push({
         tag: 'DeclarationExpression',
         identifier,
         expr: initializer.expr
@@ -433,9 +431,7 @@ const microcode = {
     const orderedStatements: Command[] = []
     statements.forEach(node => {
       orderedStatements.push(node)
-      orderedStatements.push(popInstruction)
     })
-    orderedStatements.pop()
     orderedStatements.reverse()
     agenda.push(...orderedStatements)
   },
@@ -523,31 +519,29 @@ const microcode = {
     const { identifier, expr } = cmd as DeclarationExpression
     agenda.push(
       {
-        tag: 'DeclarationInstruction',
+        tag: 'AssignmentInstruction',
         identifier
       },
       expr
     )
-  },
-
-  DeclarationInstruction: (cmd: Command, interpreterContext: InterpreterContext) => {
-    const { stash, rts } = interpreterContext
-    const { identifier } = cmd as DeclarationInstruction
-    declare(identifier, peek(stash), interpreterContext)
   },
 
   AssignmentExpression: (cmd: Command, interpreterContext: InterpreterContext) => {
     const { agenda } = interpreterContext
-
-    // TODO: handle other expression cases
     const { identifier, expr } = cmd as AssignmentExpressionNode
     agenda.push(
       {
-        tag: 'DeclarationInstruction',
+        tag: 'AssignmentInstruction',
         identifier
       },
       expr
     )
+  },
+
+  AssignmentInstruction: (cmd: Command, interpreterContext: InterpreterContext) => {
+    const { stash } = interpreterContext
+    const { identifier } = cmd as AssignmentInstruction
+    assign(identifier, pop(stash), interpreterContext)
   },
 
   Identifier: (cmd: Command, interpreterContext: InterpreterContext) => {
@@ -663,7 +657,8 @@ const microcode = {
   },
 
   Pop: (cmd: Command, interpreterContext: InterpreterContext) => {
-    interpreterContext.stash.pop()
+    const { stash } = interpreterContext
+    pop(stash)
   }
 }
 
