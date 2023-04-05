@@ -398,13 +398,13 @@ export type Command =
 
 export type DeclarationExpression = {
   tag: 'DeclarationExpression'
-  sym: string
+  identifier: string
   expr: Command
 }
 
 export type DeclarationInstruction = {
   tag: 'DeclarationInstruction'
-  sym: string
+  identifier: string
 }
 
 export type LambdaExpression = {
