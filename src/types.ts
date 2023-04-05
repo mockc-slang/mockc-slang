@@ -416,7 +416,7 @@ export type LambdaExpression = {
 export type BranchInstruction = {
   tag: 'BranchInstruction'
   cons: Command
-  alt: Command
+  alt?: Command
 }
 
 export type BinaryOpInstruction = {
@@ -542,6 +542,9 @@ export type ExpressionStatementNode = {
 
 export type SelectionStatementNode = {
   tag: 'SelectionStatement'
+  pred: ExpressionListNode
+  cons: StatementNode
+  alt?: StatementNode
 }
 
 export type IterationStatementNode = {

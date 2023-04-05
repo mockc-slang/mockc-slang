@@ -117,8 +117,7 @@ statement:
 	| jumpStatement;
 expressionStatement: expressionList? ';';
 selectionStatement:
-	'if' '(' expressionList ')' statement
-	| 'if' '(' expressionList ')' 'else' statement;
+	'if' '(' expressionList ')' statement ('else' statement)?;
 iterationStatement:
 	'while' '(' expressionList ')' statement
 	| 'do' statement 'while' '(' expressionList ')' ';'

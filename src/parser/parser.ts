@@ -80,6 +80,7 @@ import {
   Node,
   ParameterDeclarationNode,
   ParameterListNode,
+  SelectionStatementNode,
   SourceError,
   StatementNode,
   TranslationUnitNode,
@@ -579,11 +580,19 @@ class NodeGenerator implements MockCVisitor<Node> {
     }
   }
 
-  visitSelectionStatement?: ((ctx: SelectionStatementContext) => Node) | undefined
+  visitSelectionStatement(ctx: SelectionStatementContext): SelectionStatementNode {
+    const statements = ctx.statement()
+    return {
+      tag: 'SelectionStatement',
+      pred: ctx.expressionList().accept(this) as ExpressionListNode,
+      cons: statements[0].accept(this) as StatementNode,
+      alt: statements.length > 1 ? (statements[1].accept(this) as StatementNode) : undefined
+    }
+  }
+
   visitIterationStatement?: ((ctx: IterationStatementContext) => Node) | undefined
 
   visitJumpStatement(ctx: JumpStatementContext): JumpStatementNode {
-    const expressionList = ctx.expressionList()
     const keyword = ctx.getChild(0).text
     if (keyword == 'return') {
       return {
