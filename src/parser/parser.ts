@@ -326,7 +326,17 @@ class NodeGenerator implements MockCVisitor<Node> {
 
   visitEqualityExpression(ctx: EqualityExpressionContext): ExpressionNode {
     // TODO: Check for equality expression
-    return ctx.relationalExpression().accept(this) as ExpressionNode
+    const equalityExpression = ctx.equalityExpression()?.accept(this) as ExpressionNode
+    const relationalExpression = ctx.relationalExpression().accept(this) as ExpressionNode
+    if (equalityExpression) {
+      return {
+        tag: 'BinaryOpExpression',
+        sym: ctx.getChild(1).text,
+        leftExpr: equalityExpression,
+        rightExpr: relationalExpression
+      }
+    }
+    return relationalExpression
   }
 
   visitRelationalExpression(ctx: RelationalExpressionContext): ExpressionNode {

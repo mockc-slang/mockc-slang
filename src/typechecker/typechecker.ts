@@ -152,6 +152,8 @@ function checkSymType(
   switch (sym) {
     case '+':
     case '-':
+    case '==':
+    case '!=':
       if (!isSameType(leftExprType, INT_TYPE) || !isSameType(rightExprType, INT_TYPE)) {
         throw new FatalTypeError(
           {
@@ -164,7 +166,7 @@ function checkSymType(
               column: 0
             }
           },
-          `+ operator must be applied on 'int' 'int': instead found '${toString(
+          `'${sym}' operator must be applied on 'int' 'int': instead found '${toString(
             leftExprType
           )}' and '${toString(rightExprType)}'`
         )

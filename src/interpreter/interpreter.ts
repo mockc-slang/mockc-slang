@@ -309,7 +309,6 @@ const lookupVairable = (sym: string, lookupEnv: string[][]) => {
 
 const applyBinaryOp = (sym: string, leftOperand: Value, rightOperand: Value): Value =>
   binaryOpMicrocode[sym](leftOperand, rightOperand)
-
 const popInstruction: PopInstruction = { tag: 'Pop' }
 const markInstruction: MarkInstruction = { tag: 'MarkInstruction' }
 const resetInstruction: ResetInstruction = { tag: 'ResetInstruction' }
@@ -330,7 +329,9 @@ const createEnvironmentRestoreInstruction = (
 
 const binaryOpMicrocode = {
   '+': (x: number, y: number) => x + y,
-  '-': (x: number, y: number) => x - y
+  '-': (x: number, y: number) => x - y,
+  '==': (x: number, y: number) => (x == y ? 1 : 0),
+  '!=': (x: number, y: number) => (x != y ? 1 : 0)
 }
 
 const popStash = (stash: Value[]) => {
