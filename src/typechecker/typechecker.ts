@@ -307,7 +307,7 @@ function check(node: Node | undefined, E: TypeEnvironment): TypeAssignment {
   }
 
   if (tag == 'FunctionDefinition') {
-    const { type, declarator, compoundStatement } = node
+    const { type, declarator, body } = node
     const {
       identifier,
       parameterList: { parameters }
@@ -321,7 +321,7 @@ function check(node: Node | undefined, E: TypeEnvironment): TypeAssignment {
     assignIdentifierType(identifier, closureType, E)
     extendEnvironment(E)
     closureType.parameterTypes = parameters.map(param => check(param, E)) // Only check params after extending environment
-    const actualReturnType = check(compoundStatement, E) || VOID_TYPE
+    const actualReturnType = check(body, E) || VOID_TYPE
     if (!isSameType(returnType, actualReturnType)) {
       throw new FatalTypeError(
         {
@@ -452,6 +452,27 @@ function check(node: Node | undefined, E: TypeEnvironment): TypeAssignment {
       }
     }
     return returnType
+  }
+
+  if (tag == 'WhileStatement') {
+    const { pred, body } = node
+    const predType = check(pred, E)
+    if (!isSameType(predType, INT_TYPE)) {
+      throw new FatalTypeError(
+        {
+          start: {
+            line: 0,
+            column: 0
+          },
+          end: {
+            line: 0,
+            column: 0
+          }
+        },
+        `While loop predicate must be int: instead found ${toString(predType)}`
+      )
+    }
+    return check(body, E)
   }
 
   if (tag == 'ReturnStatement') {

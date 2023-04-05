@@ -34,7 +34,9 @@ import {
   ReturnStatementNode,
   SelectionStatementNode,
   TranslationUnitNode,
-  Value
+  Value,
+  WhileInstruction,
+  WhileStatementNode
 } from '../types'
 import { RuntimeStack } from './runtimestack'
 
@@ -240,6 +242,10 @@ type InterpreterContext = {
   closurePool: ClosureExpression[]
 }
 
+const isTrue = (val: any) => {
+  return val !== 0
+}
+
 const declare = (sym: string, val: Value, interpreterContext: InterpreterContext) => {
   const { variableLookupEnv, env, rts } = interpreterContext
   const pos = lookupVairable(sym, variableLookupEnv)
@@ -357,7 +363,7 @@ const microcode = {
   FunctionDefinition: (cmd: Command, interpreterContext: InterpreterContext) => {
     const { agenda } = interpreterContext
 
-    const { type, declarator, compoundStatement } = cmd as FunctionDefinitionNode
+    const { type, declarator, body } = cmd as FunctionDefinitionNode
     const { directDeclarator } = declarator // TODO: handle pointer
     const { identifier, parameterList } = directDeclarator
     agenda.push({ tag: 'Number', val: 0 }, popInstruction, {
@@ -366,7 +372,7 @@ const microcode = {
       expr: {
         tag: 'LambdaExpression',
         prms: parameterList,
-        body: compoundStatement
+        body
       }
     })
   },
@@ -483,10 +489,10 @@ const microcode = {
 
     const args = []
     for (let i = arity - 1; i >= 0; i--) {
-      args[i] = stash.pop()
+      args[i] = pop(stash)
     }
 
-    const func = stash.pop() as ClosureExpression
+    const func = pop(stash) as ClosureExpression
     const params = scanParameters(func.prms)
     interpreterContext.variableLookupEnv = extendVariableLookupEnv(params, variableLookupEnv)
     const frameAddress = rts.allocateFrame(params.length)
@@ -585,7 +591,7 @@ const microcode = {
     const { agenda, stash } = interpreterContext
 
     const { cons, alt } = cmd as BranchInstruction
-    if (pop(stash) !== 0) {
+    if (isTrue(pop(stash))) {
       agenda.push(cons)
     } else if (alt) {
       agenda.push(alt)
@@ -622,6 +628,27 @@ const microcode = {
     expressionListCmds.pop()
     expressionListCmds.reverse()
     agenda.push(...expressionListCmds)
+  },
+
+  WhileStatement: (cmd: Command, interpreterContext: InterpreterContext) => {
+    const { agenda } = interpreterContext
+    const { pred, body } = cmd as WhileStatementNode
+    agenda.push(
+      {
+        tag: 'WhileInstruction',
+        pred,
+        body
+      },
+      pred
+    )
+  },
+
+  WhileInstruction: (cmd: Command, interpreterContext: InterpreterContext) => {
+    const { agenda, stash } = interpreterContext
+    const { pred, body } = cmd as WhileInstruction
+    if (isTrue(pop(stash))) {
+      agenda.push(cmd, pred, body)
+    }
   },
 
   Number: (cmd: Command, interpreterContext: InterpreterContext) => {

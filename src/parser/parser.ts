@@ -59,7 +59,6 @@ import {
 import { MockCVisitor } from '../lang/MockCVisitor'
 import { checkTyping, FatalTypeError } from '../typechecker/typechecker'
 import {
-  AssignmentExpressionNode,
   CompilationUnitNode,
   CompoundStatementNode,
   Context,
@@ -76,6 +75,7 @@ import {
   IdentifierNode,
   InitDeclaratorNode,
   InitializerNode,
+  IterationStatementNode,
   JumpStatementNode,
   Node,
   ParameterDeclarationNode,
@@ -86,7 +86,6 @@ import {
   TranslationUnitNode,
   TypeSpecifierNode
 } from '../types'
-import { stripIndent } from '../utils/formatters'
 
 // export class DisallowedConstructError implements SourceError {
 //   public type = ErrorType.SYNTAX
@@ -245,7 +244,7 @@ class NodeGenerator implements MockCVisitor<Node> {
       tag: 'FunctionDefinition',
       type: ctx.typeSpecifier().text,
       declarator: ctx.declarator().accept(this) as DeclaratorNode,
-      compoundStatement: ctx.compoundStatement().accept(this) as CompoundStatementNode
+      body: ctx.compoundStatement().accept(this) as CompoundStatementNode
     }
   }
 
@@ -590,7 +589,13 @@ class NodeGenerator implements MockCVisitor<Node> {
     }
   }
 
-  visitIterationStatement?: ((ctx: IterationStatementContext) => Node) | undefined
+  visitIterationStatement(ctx: IterationStatementContext): IterationStatementNode {
+    return {
+      tag: 'WhileStatement',
+      pred: ctx.expressionList().accept(this) as ExpressionListNode,
+      body: ctx.statement().accept(this) as StatementNode
+    }
+  }
 
   visitJumpStatement(ctx: JumpStatementContext): JumpStatementNode {
     const keyword = ctx.getChild(0).text
