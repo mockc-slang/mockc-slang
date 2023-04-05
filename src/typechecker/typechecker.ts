@@ -426,7 +426,7 @@ function check(node: Node | undefined, E: TypeEnvironment): TypeAssignment {
             column: 0
           }
         },
-        `Function ${identifier} expects ${expectedLength} arguments but found ${actualLength} instead`
+        `Function ${identifier} expects ${expectedLength} arguments: instead found ${actualLength}`
       )
     }
     const actualTypes = params.map(param => check(param, E))
@@ -445,7 +445,7 @@ function check(node: Node | undefined, E: TypeEnvironment): TypeAssignment {
           },
           `Function ${identifier} expects (${expectedTypes.map(type =>
             toString(type)
-          )}) but found ${actualTypes.map(type => toString(type))} instead`
+          )}): instead found ${actualTypes.map(type => toString(type))}`
         )
       }
     }
@@ -485,7 +485,7 @@ function check(node: Node | undefined, E: TypeEnvironment): TypeAssignment {
             column: 0
           }
         },
-        `Predicate expects ${toString(INT_TYPE)}: instead found ${toString(predType)} instead`
+        `Predicate expects ${toString(INT_TYPE)}: instead found ${toString(predType)}`
       )
     }
     const consType = check(cons, E)
