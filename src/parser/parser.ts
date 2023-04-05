@@ -609,8 +609,14 @@ class NodeGenerator implements MockCVisitor<Node> {
       }
     }
 
+    if (keyword == 'break') {
+      return {
+        tag: 'BreakStatement'
+      }
+    }
+
     return {
-      tag: 'BreakStatement'
+      tag: 'ContinueStatement'
     }
   }
 

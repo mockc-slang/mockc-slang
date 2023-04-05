@@ -39,7 +39,12 @@ type ClosureTypeAssignment = {
   parameterTypes: TypeAssignment[]
   returnType: TypeAssignment
 }
-type TypeFrame = { [key: string]: TypeAssignment }
+type TypeFrame = {
+  tag: string
+  assignments: {
+    [key: string]: TypeAssignment
+  }
+}
 type TypeEnvironment = TypeFrame[]
 
 function toString(type: TypeAssignment): string {
@@ -95,21 +100,30 @@ function isSameType(a: TypeAssignment, b: TypeAssignment): boolean {
   return false
 }
 
-function extendEnvironment(E: TypeEnvironment) {
-  E.push({})
+function extendEnvironment(E: TypeEnvironment, tag: string) {
+  E.push({ tag, assignments: {} })
 }
 
 function exitEnvironment(E: TypeEnvironment) {
   E.pop()
 }
 
+function isInsideLoop(E: TypeEnvironment) {
+  for (let i = E.length - 1; i >= 0; i--) {
+    if (E[i].tag == 'loop') {
+      return true
+    }
+  }
+  return false
+}
+
 function assignIdentifierType(identifier: string, type: TypeAssignment, E: TypeEnvironment) {
-  E[E.length - 1][identifier] = type
+  E[E.length - 1].assignments[identifier] = type
 }
 
 function checkIdentifierType(identifier: string, E: TypeEnvironment): IdentifierTypeAssignment {
   for (let i = E.length - 1; i >= 0; i--) {
-    const type = E[i][identifier]
+    const type = E[i].assignments[identifier]
     if (!type) {
       continue
     }
@@ -319,7 +333,7 @@ function check(node: Node | undefined, E: TypeEnvironment): TypeAssignment {
       returnType
     }
     assignIdentifierType(identifier, closureType, E)
-    extendEnvironment(E)
+    extendEnvironment(E, 'block')
     closureType.parameterTypes = parameters.map(param => check(param, E)) // Only check params after extending environment
     const actualReturnType = check(body, E) || VOID_TYPE
     if (!isSameType(returnType, actualReturnType)) {
@@ -363,7 +377,7 @@ function check(node: Node | undefined, E: TypeEnvironment): TypeAssignment {
 
   if (tag == 'CompoundStatement') {
     const { statements } = node
-    extendEnvironment(E)
+    extendEnvironment(E, 'block')
     const returnType = statements.reduce((acc: TypeAssignment, curr) => {
       const statementType = check(curr, E)
       if (!statementType) {
@@ -472,7 +486,48 @@ function check(node: Node | undefined, E: TypeEnvironment): TypeAssignment {
         `While loop predicate must be int: instead found ${toString(predType)}`
       )
     }
-    return check(body, E)
+    extendEnvironment(E, 'loop')
+    const returnType = check(body, E)
+    exitEnvironment(E)
+    return returnType
+  }
+
+  if (tag == 'BreakStatement') {
+    if (!isInsideLoop(E)) {
+      throw new FatalTypeError(
+        {
+          start: {
+            line: 0,
+            column: 0
+          },
+          end: {
+            line: 0,
+            column: 0
+          }
+        },
+        `Break statement not in loop statement`
+      )
+    }
+    return
+  }
+
+  if (tag == 'ContinueStatement') {
+    if (!isInsideLoop(E)) {
+      throw new FatalTypeError(
+        {
+          start: {
+            line: 0,
+            column: 0
+          },
+          end: {
+            line: 0,
+            column: 0
+          }
+        },
+        `Continue statement not in loop statement`
+      )
+    }
+    return
   }
 
   if (tag == 'ReturnStatement') {
@@ -555,6 +610,6 @@ function check(node: Node | undefined, E: TypeEnvironment): TypeAssignment {
 }
 
 export function checkTyping(program: Node) {
-  const E: TypeEnvironment = [{}]
+  const E: TypeEnvironment = [{ tag: 'block', assignments: {} }]
   check(program, E)
 }

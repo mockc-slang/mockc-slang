@@ -333,10 +333,18 @@ const binaryOpMicrocode = {
   '-': (x: number, y: number) => x - y
 }
 
-const pop = (stash: Value[]) => {
+const popStash = (stash: Value[]) => {
   const val = stash.pop()
   if (val == undefined) {
     throw Error('internal error: expected value from stash')
+  }
+  return val
+}
+
+const popAgenda = (agenda: Command[]) => {
+  const val = agenda.pop()
+  if (val == undefined) {
+    throw Error('internal error: expected value from agenda')
   }
   return val
 }
@@ -497,10 +505,10 @@ const microcode = {
 
     const args: any[] = []
     for (let i = arity - 1; i >= 0; i--) {
-      args[i] = pop(stash)
+      args[i] = popStash(stash)
     }
 
-    const func = pop(stash) as ClosureExpression
+    const func = popStash(stash) as ClosureExpression
     const params = scanParameters(func.prms)
     interpreterContext.variableLookupEnv = extendVariableLookupEnv(params, variableLookupEnv)
     const frameAddress = memory.allocateFrame(params.length)
@@ -596,7 +604,7 @@ const microcode = {
     const { agenda, stash } = interpreterContext
 
     const { cons, alt } = cmd as BranchInstruction
-    if (isTrue(pop(stash))) {
+    if (isTrue(popStash(stash))) {
       agenda.push(cons)
     } else if (alt) {
       agenda.push(alt)
@@ -616,8 +624,8 @@ const microcode = {
     const { stash } = interpreterContext
 
     const { sym } = cmd as BinaryOpInstruction
-    const rightOperand = pop(stash)
-    const leftOperand = pop(stash)
+    const rightOperand = popStash(stash)
+    const leftOperand = popStash(stash)
     stash.push(applyBinaryOp(sym, leftOperand, rightOperand))
   },
 
@@ -651,9 +659,42 @@ const microcode = {
   WhileInstruction: (cmd: Command, interpreterContext: InterpreterContext) => {
     const { agenda, stash } = interpreterContext
     const { pred, body } = cmd as WhileInstruction
-    if (isTrue(pop(stash))) {
+    if (isTrue(popStash(stash))) {
       agenda.push(cmd, pred, body)
     }
+  },
+
+  BreakStatement: (cmd: Command, interpreterContext: InterpreterContext) => {
+    const { agenda } = interpreterContext
+    const a = popAgenda(agenda)
+    if (a.tag == 'WhileInstruction') return
+
+    if (a.tag == 'EnvironmentRestoreInstruction') {
+      // TODO: restore environment
+    }
+    agenda.push(cmd)
+  },
+
+  ContinueStatement: (cmd: Command, interpreterContext: InterpreterContext) => {
+    const { agenda } = interpreterContext
+    const a = popAgenda(agenda)
+    if (a.tag == 'WhileInstruction') {
+      const { pred, body } = a
+      agenda.push(
+        {
+          tag: 'WhileInstruction',
+          pred,
+          body
+        },
+        pred
+      )
+      return
+    }
+
+    if (a.tag == 'EnvironmentRestoreInstruction') {
+      // TODO: restore environment
+    }
+    agenda.push(cmd)
   },
 
   Number: (cmd: Command, interpreterContext: InterpreterContext) => {
@@ -665,7 +706,7 @@ const microcode = {
 
   Pop: (cmd: Command, interpreterContext: InterpreterContext) => {
     const { stash } = interpreterContext
-    pop(stash)
+    popStash(stash)
   }
 }
 
