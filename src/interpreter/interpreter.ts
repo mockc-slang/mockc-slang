@@ -248,9 +248,9 @@ const isTrue = (val: any) => {
   return val !== 0
 }
 
-const declare = (sym: string, val: Value, interpreterContext: InterpreterContext) => {
+const declare = (identifier: string, val: Value, interpreterContext: InterpreterContext) => {
   const { variableLookupEnv, env, memory } = interpreterContext
-  const pos = lookupVairable(sym, variableLookupEnv)
+  const pos = lookupVairable(identifier, variableLookupEnv)
   memory.setEnvironmentValue(env, pos, val)
 }
 
@@ -384,7 +384,7 @@ const microcode = {
     const { identifier, parameterList } = directDeclarator
     agenda.push({ tag: 'Number', val: 0 }, popInstruction, {
       tag: 'DeclarationExpression',
-      sym: identifier,
+      identifier,
       expr: {
         tag: 'LambdaExpression',
         prms: parameterList,
@@ -425,7 +425,7 @@ const microcode = {
     if (initializer.expr) {
       agenda.push({ tag: 'Number', val: 0 }, popInstruction, {
         tag: 'DeclarationExpression',
-        sym: identifier,
+        identifier,
         expr: initializer.expr
       })
     }
@@ -527,11 +527,11 @@ const microcode = {
   DeclarationExpression: (cmd: Command, interpreterContext: InterpreterContext) => {
     const { agenda } = interpreterContext
 
-    const { sym, expr } = cmd as DeclarationExpression
+    const { identifier, expr } = cmd as DeclarationExpression
     agenda.push(
       {
         tag: 'DeclarationInstruction',
-        sym
+        identifier
       },
       expr
     )
@@ -539,18 +539,22 @@ const microcode = {
 
   DeclarationInstruction: (cmd: Command, interpreterContext: InterpreterContext) => {
     const { stash, memory } = interpreterContext
-    const { sym } = cmd as DeclarationInstruction
-    declare(sym, peek(stash), interpreterContext)
+    const { identifier } = cmd as DeclarationInstruction
+    declare(identifier, peek(stash), interpreterContext)
   },
 
   AssignmentExpression: (cmd: Command, interpreterContext: InterpreterContext) => {
     const { agenda } = interpreterContext
 
     // TODO: handle other expression cases
-    const { expr } = cmd as AssignmentExpressionNode
-    if (expr) {
-      agenda.push(expr)
-    }
+    const { identifier, expr } = cmd as AssignmentExpressionNode
+    agenda.push(
+      {
+        tag: 'DeclarationInstruction',
+        identifier
+      },
+      expr
+    )
   },
 
   Identifier: (cmd: Command, interpreterContext: InterpreterContext) => {
