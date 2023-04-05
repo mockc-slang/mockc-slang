@@ -391,6 +391,7 @@ export type Command =
 
 export type Instruction =
   | DeclarationInstruction
+  | AssignmentInstruction
   | BranchInstruction
   | BinaryOpInstruction
   | PopInstruction
@@ -414,6 +415,11 @@ export type DeclarationExpression = {
 
 export type DeclarationInstruction = {
   tag: 'DeclarationInstruction'
+  identifier: string
+}
+
+export type AssignmentInstruction = {
+  tag: 'AssignmentInstruction'
   identifier: string
 }
 
