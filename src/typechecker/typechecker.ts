@@ -126,7 +126,7 @@ function checkIdentifierType(identifier: string, E: TypeEnvironment): Identifier
         column: 0
       }
     },
-    `Unable to locate type for identifier: ${identifier}`
+    `Unable to locate type for identifier '${identifier}'`
   )
 }
 
@@ -150,9 +150,9 @@ function checkSymType(
               column: 0
             }
           },
-          `+ operator must be applied on int int: instead found ${toString(
+          `+ operator must be applied on 'int' 'int': instead found '${toString(
             leftExprType
-          )} and ${toString(rightExprType)}`
+          )}' and '${toString(rightExprType)}'`
         )
       }
       return INT_TYPE
@@ -168,7 +168,7 @@ function checkSymType(
             column: 0
           }
         },
-        `Type checking not supported for ${sym}`
+        `Type checking not supported for '${sym}'`
       )
   }
 }
@@ -211,9 +211,9 @@ function check(node: Node | undefined, E: TypeEnvironment): TypeAssignment {
             column: 0
           }
         },
-        `Declaration type mismatch: ${toString(initializerType)} declared as ${toString(
+        `Declaration type mismatch: '${toString(initializerType)}' declared as '${toString(
           declaredType
-        )}`
+        )}'`
       )
     }
     assignIdentifierType(identifier, declaredType, E)
@@ -243,7 +243,9 @@ function check(node: Node | undefined, E: TypeEnvironment): TypeAssignment {
               column: 0
             }
           },
-          `Assignment type mismatch: ${toString(exprType)} assigned to ${toString(identifierType)}`
+          `Assignment type mismatch: '${toString(exprType)}' assigned to '${toString(
+            identifierType
+          )}'`
         )
       }
       return identifierType
@@ -267,7 +269,7 @@ function check(node: Node | undefined, E: TypeEnvironment): TypeAssignment {
             column: 0
           }
         },
-        `Conditional expression predicate must be int: instead found ${toString(predType)}`
+        `Conditional expression predicate must be 'int': instead found '${toString(predType)}'`
       )
     }
     const consType = check(cons, E)
@@ -284,9 +286,9 @@ function check(node: Node | undefined, E: TypeEnvironment): TypeAssignment {
             column: 0
           }
         },
-        `Conditional expression return types must be the same: instead found ${toString(
+        `Conditional expression return types must be the same: instead found '${toString(
           consType
-        )} and ${toString(altType)}`
+        )}' and '${toString(altType)}'`
       )
     }
     return consType
@@ -332,9 +334,9 @@ function check(node: Node | undefined, E: TypeEnvironment): TypeAssignment {
             column: 0
           }
         },
-        `Function must return defined type: expected ${toString(returnType)} but found ${toString(
+        `Returning '${toString(
           actualReturnType
-        )}`
+        )}' from a function with incompatible result type '${toString(returnType)}'`
       )
     }
     exitEnvironment(E)
@@ -382,9 +384,9 @@ function check(node: Node | undefined, E: TypeEnvironment): TypeAssignment {
               column: 0
             }
           },
-          `Return type must be consistent: instead found ${toString(acc)} and ${toString(
+          `Return type must be consistent: instead found '${toString(acc)}' and '${toString(
             statementType
-          )}`
+          )}'`
         )
       }
       return acc
@@ -408,7 +410,7 @@ function check(node: Node | undefined, E: TypeEnvironment): TypeAssignment {
             column: 0
           }
         },
-        `No such function: ${identifier}`
+        `Unable to locate function: '${identifier}'`
       )
     }
     const { parameterTypes: expectedTypes, returnType } = identifierType
@@ -426,7 +428,7 @@ function check(node: Node | undefined, E: TypeEnvironment): TypeAssignment {
             column: 0
           }
         },
-        `Function ${identifier} expects ${expectedLength} arguments: instead found ${actualLength}`
+        `Function '${identifier}' expects '${expectedLength}' arguments: instead found '${actualLength}'`
       )
     }
     const actualTypes = params.map(param => check(param, E))
@@ -485,7 +487,7 @@ function check(node: Node | undefined, E: TypeEnvironment): TypeAssignment {
             column: 0
           }
         },
-        `Predicate expects ${toString(INT_TYPE)}: instead found ${toString(predType)}`
+        `Predicate expects '${toString(INT_TYPE)}': instead found '${toString(predType)}'`
       )
     }
     const consType = check(cons, E)
@@ -506,9 +508,9 @@ function check(node: Node | undefined, E: TypeEnvironment): TypeAssignment {
               column: 0
             }
           },
-          `Selection statement return types must be consistent: instead found ${toString(
+          `Selection statement return types must be consistent: instead found '${toString(
             consType
-          )} and ${toString(altType)}`
+          )}' and '${toString(altType)}'`
         )
       }
       return consType
@@ -527,7 +529,7 @@ function check(node: Node | undefined, E: TypeEnvironment): TypeAssignment {
         column: 0
       }
     },
-    `Type checking not supported for ${tag}`
+    `Type checking not supported for '${tag}'`
   )
 }
 
