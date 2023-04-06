@@ -327,6 +327,15 @@ const createEnvironmentRestoreInstruction = (
   }
 }
 
+const EnvironmentRestoreInstruction = (cmd: Command, interpreterContext: InterpreterContext) => {
+  const { env, variableLookupEnv } = cmd as EnvironmentRestoreInstruction
+  const { memory } = interpreterContext
+  const oldEnv = env.getFloat64(0)
+  interpreterContext.env = oldEnv
+  interpreterContext.variableLookupEnv = variableLookupEnv
+  memory.deallocateEnvironment(oldEnv)
+}
+
 const binaryOpMicrocode = {
   '+': (x: number, y: number) => x + y,
   '-': (x: number, y: number) => x - y,
@@ -457,14 +466,7 @@ const microcode = {
     agenda.push(...orderedStatements)
   },
 
-  EnvironmentRestoreInstruction: (cmd: Command, interpreterContext: InterpreterContext) => {
-    const { env, variableLookupEnv } = cmd as EnvironmentRestoreInstruction
-    const { agenda, memory } = interpreterContext
-    const oldEnv = env.getFloat64(0)
-    interpreterContext.env = oldEnv
-    interpreterContext.variableLookupEnv = variableLookupEnv
-    memory.deallocateEnvironment(oldEnv)
-  },
+  EnvironmentRestoreInstruction,
 
   ReturnStatement: (cmd: Command, interpreterContext: InterpreterContext) => {
     const { agenda } = interpreterContext
@@ -671,7 +673,7 @@ const microcode = {
     if (a.tag == 'WhileInstruction') return
 
     if (a.tag == 'EnvironmentRestoreInstruction') {
-      // TODO: restore environment
+      EnvironmentRestoreInstruction(cmd, interpreterContext)
     }
     agenda.push(cmd)
   },
@@ -693,7 +695,7 @@ const microcode = {
     }
 
     if (a.tag == 'EnvironmentRestoreInstruction') {
-      // TODO: restore environment
+      EnvironmentRestoreInstruction(cmd, interpreterContext)
     }
     agenda.push(cmd)
   },
