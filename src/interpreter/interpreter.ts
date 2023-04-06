@@ -1,5 +1,7 @@
 /* tslint:disable:max-classes-per-file */
 
+import { create } from 'domain'
+
 import { RuntimeSourceError } from '../errors/runtimeSourceError'
 import {
   ApplicationInstruction,
@@ -35,7 +37,7 @@ import {
   TranslationUnitNode,
   Value
 } from '../types'
-import { RuntimeStack } from './runtimestack'
+import { Memory } from './memory'
 
 // class Thunk {
 //   public value: Value
@@ -233,16 +235,16 @@ import { RuntimeStack } from './runtimestack'
 type InterpreterContext = {
   agenda: Command[]
   stash: Value[]
-  rts: RuntimeStack
+  memory: Memory
   env: number
   variableLookupEnv: string[][]
   closurePool: ClosureExpression[]
 }
 
 const declare = (sym: string, val: Value, interpreterContext: InterpreterContext) => {
-  const { variableLookupEnv, env, rts } = interpreterContext
+  const { variableLookupEnv, env, memory } = interpreterContext
   const pos = lookupVairable(sym, variableLookupEnv)
-  rts.setEnvironmentValue(env, pos, val)
+  memory.setEnvironmentValue(env, pos, val)
 }
 
 const scanDeclarations = (cmds: Command[]): string[] => {
@@ -302,6 +304,20 @@ const popInstruction: PopInstruction = { tag: 'Pop' }
 const markInstruction: MarkInstruction = { tag: 'MarkInstruction' }
 const resetInstruction: ResetInstruction = { tag: 'ResetInstruction' }
 
+const createEnvironmentRestoreInstruction = (
+  env: number,
+  lookupEnv: string[][]
+): EnvironmentRestoreInstruction => {
+  const word = new ArrayBuffer(8)
+  const view = new DataView(word)
+  view.setFloat64(0, env)
+  return {
+    tag: 'EnvironmentRestoreInstruction',
+    env: view,
+    variableLookupEnv: lookupEnv
+  }
+}
+
 const binaryOpMicrocode = {
   '+': (x: number, y: number) => x + y,
   '-': (x: number, y: number) => x - y
@@ -331,13 +347,13 @@ const microcode = {
   },
 
   TranslationUnit: (cmd: Command, interpreterContext: InterpreterContext) => {
-    const { agenda, variableLookupEnv, rts, env } = interpreterContext
+    const { agenda, variableLookupEnv, memory, env } = interpreterContext
     const { externalDeclarations } = cmd as TranslationUnitNode
 
     const locals = scanDeclarations(externalDeclarations)
     interpreterContext.variableLookupEnv = extendVariableLookupEnv(locals, variableLookupEnv)
-    const frameAddress = rts.allocateFrame(locals.length)
-    interpreterContext.env = rts.environmentExtend(frameAddress, env)
+    const frameAddress = memory.allocateFrame(locals.length)
+    interpreterContext.env = memory.environmentExtend(frameAddress, env)
 
     const externalDeclarationCmds: Command[] = []
     externalDeclarations.forEach(node => {
@@ -371,14 +387,14 @@ const microcode = {
   },
 
   LambdaExpression: (cmd: Command, interpreterContext: InterpreterContext) => {
-    const { stash, rts, closurePool } = interpreterContext
+    const { stash, memory, closurePool } = interpreterContext
     const { prms, body } = cmd as LambdaExpression
 
     // push closure to closure pool, create a closure Tag
     // with payload as index to closure pool
     // similar to how String is implemented in realistic VM
     closurePool.push({ tag: 'Closure', prms, body })
-    const closureNaN = rts.makeClosure(closurePool.length - 1)
+    const closureNaN = memory.makeClosure(closurePool.length - 1)
     stash.push(closureNaN)
   },
 
@@ -409,19 +425,15 @@ const microcode = {
   },
 
   CompoundStatement: (cmd: Command, interpreterContext: InterpreterContext) => {
-    const { agenda, variableLookupEnv, rts, env } = interpreterContext
+    const { agenda, variableLookupEnv, memory, env } = interpreterContext
     const { statements } = cmd as CompoundStatementNode
 
     const locals = scanDeclarations(statements)
     interpreterContext.variableLookupEnv = extendVariableLookupEnv(locals, variableLookupEnv)
-    const frameAddress = rts.allocateFrame(locals.length)
-    interpreterContext.env = rts.environmentExtend(frameAddress, env)
+    const frameAddress = memory.allocateFrame(locals.length)
+    interpreterContext.env = memory.environmentExtend(frameAddress, env)
 
-    agenda.push({
-      tag: 'EnvironmentRestoreInstruction',
-      env: [env, interpreterContext.env],
-      variableLookupEnv
-    })
+    agenda.push(createEnvironmentRestoreInstruction(env, variableLookupEnv))
 
     const orderedStatements: Command[] = []
     statements.forEach(node => {
@@ -435,10 +447,11 @@ const microcode = {
 
   EnvironmentRestoreInstruction: (cmd: Command, interpreterContext: InterpreterContext) => {
     const { env, variableLookupEnv } = cmd as EnvironmentRestoreInstruction
-    const { agenda, rts } = interpreterContext
-    interpreterContext.env = env[0]
+    const { agenda, memory } = interpreterContext
+    const oldEnv = env.getFloat64(0)
+    interpreterContext.env = oldEnv
     interpreterContext.variableLookupEnv = variableLookupEnv
-    // TODO: implement RTS shrinking/deallocation here
+    memory.deallocateEnvironment(oldEnv)
   },
 
   ReturnStatement: (cmd: Command, interpreterContext: InterpreterContext) => {
@@ -450,7 +463,6 @@ const microcode = {
   },
 
   ResetInstruction: (cmd: Command, interpreterContext: InterpreterContext) => {
-    // TODO: check for env restore when popping, for RTS restoration
     const { agenda } = interpreterContext
     const nextInstr = agenda.pop()
     if (nextInstr && nextInstr.tag != 'MarkInstruction') {
@@ -477,10 +489,10 @@ const microcode = {
   },
 
   ApplicationInstruction: (cmd: Command, interpreterContext: InterpreterContext) => {
-    const { stash, env, agenda, variableLookupEnv, rts } = interpreterContext
+    const { stash, env, agenda, variableLookupEnv, memory } = interpreterContext
     const { arity } = cmd as ApplicationInstruction
 
-    const args = []
+    const args: any[] = []
     for (let i = arity - 1; i >= 0; i--) {
       args[i] = stash.pop()
     }
@@ -488,10 +500,10 @@ const microcode = {
     const func = stash.pop() as ClosureExpression
     const params = scanParameters(func.prms)
     interpreterContext.variableLookupEnv = extendVariableLookupEnv(params, variableLookupEnv)
-    const frameAddress = rts.allocateFrame(params.length)
-    interpreterContext.env = rts.environmentExtend(frameAddress, env)
+    const frameAddress = memory.allocateFrame(params.length)
+    interpreterContext.env = memory.environmentExtend(frameAddress, env)
     for (let i = 0; i < arity; i++) {
-      rts.setFrameValue(frameAddress, i, args[i])
+      memory.setFrameValue(frameAddress, i, args[i])
     }
 
     // TODO: implement builtin here
@@ -499,12 +511,7 @@ const microcode = {
     if (agenda.length == 0 || (peek(agenda) as Command).tag == 'EnvironmentRestoreInstruction') {
       agenda.push(markInstruction)
     } else {
-      const eri: EnvironmentRestoreInstruction = {
-        tag: 'EnvironmentRestoreInstruction',
-        env: [env, interpreterContext.env],
-        variableLookupEnv
-      }
-      agenda.push(eri)
+      agenda.push(createEnvironmentRestoreInstruction(env, variableLookupEnv))
       agenda.push(markInstruction)
     }
     agenda.push(func.body)
@@ -524,7 +531,7 @@ const microcode = {
   },
 
   DeclarationInstruction: (cmd: Command, interpreterContext: InterpreterContext) => {
-    const { stash, rts } = interpreterContext
+    const { stash, memory } = interpreterContext
     const { sym } = cmd as DeclarationInstruction
     declare(sym, peek(stash), interpreterContext)
   },
@@ -540,14 +547,14 @@ const microcode = {
   },
 
   Identifier: (cmd: Command, interpreterContext: InterpreterContext) => {
-    const { variableLookupEnv, stash, rts, env, closurePool } = interpreterContext
+    const { variableLookupEnv, stash, memory, env, closurePool } = interpreterContext
     const { val: sym } = cmd as IdentifierNode
 
     const pos = lookupVairable(sym, variableLookupEnv)
-    const val = rts.getEnvironmentValue(env, pos)
+    const val = memory.getEnvironmentValue(env, pos)
 
-    if (rts.isClosure(val)) {
-      const closurePoolIndex = rts.getClosurePoolIndex(val)
+    if (memory.isClosure(val)) {
+      const closurePoolIndex = memory.getClosurePoolIndex(val)
       stash.push(closurePool[closurePoolIndex])
     } else {
       stash.push(val)
@@ -622,9 +629,9 @@ function runInterpreter(context: Context, interpreterContext: InterpreterContext
 
   const step_limit = 1000000
 
-  const { stash, agenda, rts } = interpreterContext
+  const { stash, agenda, memory } = interpreterContext
 
-  interpreterContext.env = rts.createGlobalEnvironment()
+  interpreterContext.env = memory.createGlobalEnvironment()
 
   let i = 0
   while (i < step_limit) {
@@ -652,13 +659,13 @@ export function* evaluate(node: Node, context: Context) {
     const interpreterContext: InterpreterContext = {
       agenda: [node],
       stash: [],
-      rts: new RuntimeStack(10),
+      memory: new Memory(10),
       env: 0,
       variableLookupEnv: [], // TODO: add primitives / builtins here
       closurePool: []
     }
 
-    interpreterContext.env = interpreterContext.rts.createGlobalEnvironment()
+    interpreterContext.env = interpreterContext.memory.createGlobalEnvironment()
 
     return runInterpreter(context, interpreterContext)
   } catch (error) {

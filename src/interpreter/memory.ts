@@ -2,7 +2,31 @@ export class Memory {
   static WordSize = 8
   static Mega = 2 ** 20
   view: DataView
-  free: number
+
+  stackLimit: number
+  private _stackFree: number
+  protected set stackFree(newValue: number) {
+    if (newValue >= this.stackLimit) {
+      throw Error('Memory limit reached')
+    }
+    this._stackFree = newValue
+  }
+  protected get stackFree() {
+    return this._stackFree
+  }
+
+  heapLimit: number
+  heapStartingPoint: number
+  private _heapFree: number
+  protected set heapFree(newValue: number) {
+    if (newValue >= this.heapLimit) {
+      throw Error('Memory limit reached')
+    }
+    this._heapFree = newValue
+  }
+  protected get heapFree() {
+    return this._heapFree
+  }
 
   // primitive values
 
@@ -38,9 +62,16 @@ export class Memory {
   static NaNTagOffset = 13
 
   constructor(megaBytes: number) {
+    if (megaBytes >= 2 ** 12) {
+      throw Error('Maximum size of memory should not exceed 2**12 megabytes')
+    }
     const data = new ArrayBuffer(Memory.Mega * megaBytes)
+    this.stackLimit = (Memory.Mega * megaBytes) / 2
+    this.heapLimit = Memory.Mega * megaBytes
     this.view = new DataView(data)
-    this.free = 0
+    this.stackFree = 0
+    this.heapFree = (Memory.Mega * megaBytes) / 2
+    this.heapStartingPoint = (Memory.Mega * megaBytes) / 2
   }
 
   static testNanBoxing() {
@@ -80,7 +111,10 @@ export class Memory {
   }
 
   protected displayMemoryLayout() {
-    for (let i = 0; i < this.free; i++) {
+    for (let i = 0; i < this.stackFree; i++) {
+      console.log(i, this.getWordAtIndex(i), Memory.wordToString(this.getWordAtIndex(i)))
+    }
+    for (let i = this.heapStartingPoint; i < this.heapFree; i++) {
       console.log(i, this.getWordAtIndex(i), Memory.wordToString(this.getWordAtIndex(i)))
     }
   }
@@ -255,5 +289,220 @@ export class Memory {
       : String(isNaN(x))
       ? Memory.wordToString(x)
       : String(x)
+  }
+
+  // closure
+
+  makeClosure(poolIndex: number) {
+    const address = this.makeTaggedNaN(Memory.ClosureTag)
+    const buf = new ArrayBuffer(8)
+    const view = new DataView(buf)
+    view.setFloat64(0, address)
+    view.setInt32(4, poolIndex)
+    return view.getFloat64(0)
+  }
+
+  getClosurePoolIndex(closureNaN: number) {
+    const buf = new ArrayBuffer(8)
+    const view = new DataView(buf)
+    view.setFloat64(0, closureNaN)
+    return view.getInt32(4)
+  }
+
+  // block frame
+
+  static BlockframeEnvironmentOffset = 1
+  static BlockframeSize = 2
+
+  allocateBlockframe(env: number) {
+    const frameIndex = this.stackFree
+    this.stackFree += Memory.BlockframeSize
+    this.setTaggedNaNAtIndex(frameIndex, Memory.BlockframeTag)
+    this.setWordAtIndex(frameIndex + Memory.BlockframeEnvironmentOffset, env)
+    return this.makeAddress(frameIndex)
+  }
+
+  getBlockframeEnvironment(address: number) {
+    return this.getWordAtIndex(
+      this.getIndexFromAddress(address) + Memory.BlockframeEnvironmentOffset
+    )
+  }
+
+  isBlockframe(x: number) {
+    return (
+      this.checkTag(x, Memory.AddressTag) &&
+      this.checkTag(this.addressDeref(x), Memory.BlockframeTag)
+    )
+  }
+
+  // call frame
+
+  static CallframeEnvironmentOffset = 1
+  static CallframePcOffset = 2
+  static CallframeSize = 3
+
+  allocateCallframe(env: number, pc: number) {
+    const frameIndex = this.stackFree
+    this.stackFree += Memory.CallframeSize
+    this.setTaggedNaNAtIndex(frameIndex, Memory.CallframeTag)
+    this.setWordAtIndex(frameIndex + Memory.CallframeEnvironmentOffset, env)
+    this.setWordAtIndex(frameIndex + Memory.CallframePcOffset, pc)
+    return this.makeAddress(frameIndex)
+  }
+
+  getCallframeEnvironment(address: number) {
+    return this.getWordAtIndex(
+      this.getIndexFromAddress(address) + Memory.CallframeEnvironmentOffset
+    )
+  }
+
+  getCallframePc(address: number) {
+    return this.getWordAtIndex(this.getIndexFromAddress(address) + Memory.CallframePcOffset)
+  }
+  isCallframe(x: number) {
+    return (
+      this.checkTag(x, Memory.AddressTag) &&
+      this.checkTag(this.addressDeref(x), Memory.CallframeTag)
+    )
+  }
+
+  // environment frame
+
+  static FrameSizeOffset = 1
+  static FrameValuesOffset = 2
+
+  // size is number of words to be reserved
+  // for values
+  allocateFrame(size: number) {
+    const frameIndex = this.stackFree
+    this.stackFree += Memory.FrameValuesOffset + size
+    this.setTaggedNaNAtIndex(frameIndex, Memory.FrameTag)
+    this.setWordAtIndex(frameIndex + Memory.FrameSizeOffset, size)
+    return this.makeAddress(frameIndex)
+  }
+
+  getFrameSize(frameAddress: number) {
+    return this.getWordAtIndex(this.getIndexFromAddress(frameAddress) + Memory.FrameSizeOffset)
+  }
+
+  getFrameValue(frameAddress: number, valueIndex: number) {
+    return this.getWordAtIndex(
+      this.getIndexFromAddress(frameAddress) + Memory.FrameValuesOffset + valueIndex
+    )
+  }
+
+  setFrameValue(frameAddress: number, valueIndex: number, value: number) {
+    this.setWordAtIndex(
+      this.getIndexFromAddress(frameAddress) + Memory.FrameValuesOffset + valueIndex,
+      value
+    )
+  }
+
+  displayFrame(frameAddress: number) {
+    console.log('Frame:')
+    const size = this.getFrameSize(frameAddress)
+    console.log('frame size:', size)
+    for (let i = 0; i < size; i++) {
+      console.log('value index:', i)
+      const value = this.getFrameValue(frameAddress, i)
+      console.log('value:', value)
+      console.log('value word:', Memory.wordToString(value))
+    }
+  }
+
+  // environment
+
+  // environments are memory nodes that contain
+  // addresses of frames
+  static EnvironmentSizeOffset = 1
+  static EnvironmentFramesOffset = 2
+
+  allocateEnvironment(size: number) {
+    const envIndex = this.stackFree
+    this.stackFree += Memory.EnvironmentFramesOffset + size
+    this.setTaggedNaNAtIndex(envIndex, Memory.EnvironmentTag)
+    this.setWordAtIndex(envIndex + Memory.EnvironmentSizeOffset, size)
+    return this.makeAddress(envIndex)
+  }
+
+  createGlobalEnvironment() {
+    // TODO: add builtin functions here, by extending one more frame
+    return this.allocateEnvironment(0)
+  }
+
+  getEnvironmentSize(envAddress: number) {
+    return this.getWordAtIndex(this.getIndexFromAddress(envAddress) + Memory.EnvironmentSizeOffset)
+  }
+
+  // access environment given by address
+  // using a "position", i.e. a pair of
+  // frame index and value index
+  getEnvironmentValue(envAddress: number, position: number[]) {
+    const [frameIndex, valueIndex] = position
+    const frameAddress = this.getWordAtIndex(
+      this.getIndexFromAddress(envAddress) + Memory.EnvironmentFramesOffset + frameIndex
+    )
+    return this.getFrameValue(frameAddress, valueIndex)
+  }
+
+  setEnvironmentValue(envAddress: number, position: number[], value: number) {
+    const [frameIndex, valueIndex] = position
+    const frameAddress = this.getWordAtIndex(
+      this.getIndexFromAddress(envAddress) + Memory.EnvironmentFramesOffset + frameIndex
+    )
+    this.setFrameValue(frameAddress, valueIndex, value)
+  }
+
+  // get the whole frame at given frame index
+  getEnvironmentFrame(envAddress: number, frameIndex: number) {
+    return this.getWordAtIndex(
+      this.getIndexFromAddress(envAddress) + Memory.EnvironmentFramesOffset + frameIndex
+    )
+  }
+  // set the whole frame at given frame index
+  setEnvironmentFrame(envAddress: number, frameIndex: number, frame: number) {
+    return this.setWordAtIndex(
+      this.getIndexFromAddress(envAddress) + Memory.EnvironmentFramesOffset + frameIndex,
+      frame
+    )
+  }
+
+  // extend a given environment by a new frame:
+  // create a new environment that is bigger by 1
+  // frame slot than the given environment.
+  // copy the frame address to the new environment.
+  // enter the address of the new frame to end
+  // of the new environment
+  environmentExtend(frameAddress: number, envAddress: number) {
+    const oldSize = this.getEnvironmentSize(envAddress)
+    const newEnvAddress = this.allocateEnvironment(oldSize + 1)
+    let i: number
+    for (i = 0; i < oldSize; i++) {
+      this.setEnvironmentFrame(newEnvAddress, i, this.getEnvironmentFrame(envAddress, i))
+    }
+    this.setEnvironmentFrame(newEnvAddress, i, frameAddress)
+    return newEnvAddress
+  }
+
+  deallocateEnvironment(oldEnv: number) {
+    const oldEnvIndex = this.getIndexFromAddress(oldEnv)
+    const oldEnvSize = this.getEnvironmentSize(oldEnv)
+    const nextEnvIndex = oldEnvIndex + Memory.EnvironmentFramesOffset + oldEnvSize
+    for (let i = nextEnvIndex; i < this.stackFree; i++) {
+      this.setWordAtIndex(i, 0)
+    }
+    this.stackFree = nextEnvIndex
+  }
+
+  // for debuggging: display environment
+  displayEnvironment(envAddress: number) {
+    const size = this.getEnvironmentSize(envAddress)
+    console.log('Environment:')
+    console.log('environment size:', size)
+    for (let i = 0; i < size; i++) {
+      console.log('frame index:', i)
+      const frame = this.getEnvironmentFrame(envAddress, i)
+      this.displayFrame(frame)
+    }
   }
 }
