@@ -436,9 +436,9 @@ const microcode = {
   EnvironmentRestoreInstruction: (cmd: Command, interpreterContext: InterpreterContext) => {
     const { env, variableLookupEnv } = cmd as EnvironmentRestoreInstruction
     const { agenda, rts } = interpreterContext
-    interpreterContext.env = env[0]
+    const oldEnv = env[0]
+    interpreterContext.env = oldEnv
     interpreterContext.variableLookupEnv = variableLookupEnv
-    // TODO: implement RTS shrinking/deallocation here
   },
 
   ReturnStatement: (cmd: Command, interpreterContext: InterpreterContext) => {
@@ -480,7 +480,7 @@ const microcode = {
     const { stash, env, agenda, variableLookupEnv, rts } = interpreterContext
     const { arity } = cmd as ApplicationInstruction
 
-    const args = []
+    const args: any[] = []
     for (let i = arity - 1; i >= 0; i--) {
       args[i] = stash.pop()
     }

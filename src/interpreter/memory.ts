@@ -2,7 +2,19 @@ export class Memory {
   static WordSize = 8
   static Mega = 2 ** 20
   view: DataView
-  free: number
+  limit: number
+
+  private _free: number
+
+  protected set free(newValue: number) {
+    if (newValue >= this.limit) {
+      throw Error('Memory limit reached')
+    }
+    this._free = newValue
+  }
+  protected get free() {
+    return this._free
+  }
 
   // primitive values
 
@@ -39,6 +51,7 @@ export class Memory {
 
   constructor(megaBytes: number) {
     const data = new ArrayBuffer(Memory.Mega * megaBytes)
+    this.limit = Memory.Mega * megaBytes
     this.view = new DataView(data)
     this.free = 0
   }
@@ -255,5 +268,11 @@ export class Memory {
       : String(isNaN(x))
       ? Memory.wordToString(x)
       : String(x)
+  }
+
+  checkMemoryLimit() {
+    if (this.free >= this.limit) {
+      throw Error('Memory limit reached')
+    }
   }
 }

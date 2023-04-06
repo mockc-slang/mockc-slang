@@ -195,12 +195,22 @@ export class RuntimeStack extends Memory {
   environmentExtend(frameAddress: number, envAddress: number) {
     const oldSize = this.getEnvironmentSize(envAddress)
     const newEnvAddress = this.allocateEnvironment(oldSize + 1)
-    let i
+    let i: number
     for (i = 0; i < oldSize; i++) {
       this.setEnvironmentFrame(newEnvAddress, i, this.getEnvironmentFrame(envAddress, i))
     }
     this.setEnvironmentFrame(newEnvAddress, i, frameAddress)
     return newEnvAddress
+  }
+
+  deallocateEnvironment(oldEnv: number) {
+    const oldEnvIndex = this.getIndexFromAddress(oldEnv)
+    const oldEnvSize = this.getEnvironmentSize(oldEnv)
+    const nextEnvIndex = oldEnvIndex + RuntimeStack.EnvironmentFramesOffset + oldEnvSize
+    for (let i = nextEnvIndex; i < this.free; i++) {
+      this.setWordAtIndex(i, 0)
+    }
+    this.free = nextEnvIndex
   }
 
   // for debuggging: display environment
