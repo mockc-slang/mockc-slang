@@ -39,7 +39,12 @@ type ClosureTypeAssignment = {
   parameterTypes: TypeAssignment[]
   returnType: TypeAssignment
 }
-type TypeFrame = { [key: string]: TypeAssignment }
+type TypeFrame = {
+  tag: string
+  assignments: {
+    [key: string]: TypeAssignment
+  }
+}
 type TypeEnvironment = TypeFrame[]
 
 function toString(type: TypeAssignment): string {
@@ -95,37 +100,30 @@ function isSameType(a: TypeAssignment, b: TypeAssignment): boolean {
   return false
 }
 
-function isInt(assignment: TypeAssignment) {
-  if (!assignment) return false
-  if (assignment.tag != 'Variable') {
-    return false
-  }
-  return assignment.type == 'int'
-}
-
-function isChar(assignment: TypeAssignment) {
-  if (!assignment) return false
-  if (assignment.tag != 'Variable') {
-    return false
-  }
-  return assignment.type == 'char'
-}
-
-function extendEnvironment(E: TypeEnvironment) {
-  E.push({})
+function extendEnvironment(E: TypeEnvironment, tag: string) {
+  E.push({ tag, assignments: {} })
 }
 
 function exitEnvironment(E: TypeEnvironment) {
   E.pop()
 }
 
-function assignIdentifierType(E: TypeEnvironment, identifier: string, type: TypeAssignment) {
-  E[E.length - 1][identifier] = type
+function isInsideLoop(E: TypeEnvironment) {
+  for (let i = E.length - 1; i >= 0; i--) {
+    if (E[i].tag == 'loop') {
+      return true
+    }
+  }
+  return false
 }
 
-function checkIdentifierType(E: TypeEnvironment, identifier: string): IdentifierTypeAssignment {
+function assignIdentifierType(identifier: string, type: TypeAssignment, E: TypeEnvironment) {
+  E[E.length - 1].assignments[identifier] = type
+}
+
+function checkIdentifierType(identifier: string, E: TypeEnvironment): IdentifierTypeAssignment {
   for (let i = E.length - 1; i >= 0; i--) {
-    const type = E[i][identifier]
+    const type = E[i].assignments[identifier]
     if (!type) {
       continue
     }
@@ -142,7 +140,7 @@ function checkIdentifierType(E: TypeEnvironment, identifier: string): Identifier
         column: 0
       }
     },
-    `Unable to locate type for identifier: ${identifier}`
+    `Unable to locate type for identifier '${identifier}'`
   )
 }
 
@@ -154,7 +152,9 @@ function checkSymType(
   switch (sym) {
     case '+':
     case '-':
-      if (!isInt(leftExprType) || !isInt(rightExprType)) {
+    case '==':
+    case '!=':
+      if (!isSameType(leftExprType, INT_TYPE) || !isSameType(rightExprType, INT_TYPE)) {
         throw new FatalTypeError(
           {
             start: {
@@ -166,9 +166,9 @@ function checkSymType(
               column: 0
             }
           },
-          `+ operator must be applied on int int: instead found ${toString(
+          `'${sym}' operator must be applied on 'int' 'int': instead found '${toString(
             leftExprType
-          )} and ${toString(rightExprType)}`
+          )}' and '${toString(rightExprType)}'`
         )
       }
       return INT_TYPE
@@ -184,7 +184,7 @@ function checkSymType(
             column: 0
           }
         },
-        `Type checking not supported for ${sym}`
+        `Type checking not supported for '${sym}'`
       )
   }
 }
@@ -227,12 +227,12 @@ function check(node: Node | undefined, E: TypeEnvironment): TypeAssignment {
             column: 0
           }
         },
-        `Declaration type mismatch: ${toString(initializerType)} declared as ${toString(
+        `Declaration type mismatch: '${toString(initializerType)}' declared as '${toString(
           declaredType
-        )}`
+        )}'`
       )
     }
-    assignIdentifierType(E, identifier, declaredType)
+    assignIdentifierType(identifier, declaredType, E)
     return
   }
 
@@ -243,7 +243,7 @@ function check(node: Node | undefined, E: TypeEnvironment): TypeAssignment {
 
   if (tag == 'AssignmentExpression') {
     const { identifier, sym, expr } = node
-    const identifierType = checkIdentifierType(E, identifier)
+    const identifierType = checkIdentifierType(identifier, E)
     const exprType = check(expr, E)
 
     if (sym == '=') {
@@ -259,7 +259,9 @@ function check(node: Node | undefined, E: TypeEnvironment): TypeAssignment {
               column: 0
             }
           },
-          `Assignment type mismatch: ${toString(exprType)} assigned to ${toString(identifierType)}`
+          `Assignment type mismatch: '${toString(exprType)}' assigned to '${toString(
+            identifierType
+          )}'`
         )
       }
       return identifierType
@@ -271,7 +273,7 @@ function check(node: Node | undefined, E: TypeEnvironment): TypeAssignment {
   if (tag == 'ConditionalExpression') {
     const { pred, cons, alt } = node
     const predType = check(pred, E)
-    if (!isInt(predType)) {
+    if (!isSameType(predType, INT_TYPE)) {
       throw new FatalTypeError(
         {
           start: {
@@ -283,7 +285,7 @@ function check(node: Node | undefined, E: TypeEnvironment): TypeAssignment {
             column: 0
           }
         },
-        `Conditional expression predicate must be int: instead found ${toString(predType)}`
+        `Conditional expression predicate must be 'int': instead found '${toString(predType)}'`
       )
     }
     const consType = check(cons, E)
@@ -300,9 +302,9 @@ function check(node: Node | undefined, E: TypeEnvironment): TypeAssignment {
             column: 0
           }
         },
-        `Conditional expression return types must be the same: instead found ${toString(
+        `Conditional expression return types must be the same: instead found '${toString(
           consType
-        )} and ${toString(altType)}`
+        )}' and '${toString(altType)}'`
       )
     }
     return consType
@@ -321,7 +323,7 @@ function check(node: Node | undefined, E: TypeEnvironment): TypeAssignment {
   }
 
   if (tag == 'FunctionDefinition') {
-    const { type, declarator, compoundStatement } = node
+    const { type, declarator, body } = node
     const {
       identifier,
       parameterList: { parameters }
@@ -332,10 +334,10 @@ function check(node: Node | undefined, E: TypeEnvironment): TypeAssignment {
       parameterTypes: [],
       returnType
     }
-    assignIdentifierType(E, identifier, closureType)
-    extendEnvironment(E)
+    assignIdentifierType(identifier, closureType, E)
+    extendEnvironment(E, 'block')
     closureType.parameterTypes = parameters.map(param => check(param, E)) // Only check params after extending environment
-    const actualReturnType = check(compoundStatement, E)
+    const actualReturnType = check(body, E) || VOID_TYPE
     if (!isSameType(returnType, actualReturnType)) {
       throw new FatalTypeError(
         {
@@ -348,9 +350,9 @@ function check(node: Node | undefined, E: TypeEnvironment): TypeAssignment {
             column: 0
           }
         },
-        `Function must return defined type: expected ${toString(returnType)} but found ${toString(
+        `Returning '${toString(
           actualReturnType
-        )}`
+        )}' from a function with incompatible result type '${toString(returnType)}'`
       )
     }
     exitEnvironment(E)
@@ -365,7 +367,7 @@ function check(node: Node | undefined, E: TypeEnvironment): TypeAssignment {
       }
     } = node
     const parameterType = getVariableTypeFromString(type)
-    assignIdentifierType(E, identifier, parameterType)
+    assignIdentifierType(identifier, parameterType, E)
     return parameterType
   }
 
@@ -377,7 +379,7 @@ function check(node: Node | undefined, E: TypeEnvironment): TypeAssignment {
 
   if (tag == 'CompoundStatement') {
     const { statements } = node
-    extendEnvironment(E)
+    extendEnvironment(E, 'block')
     const returnType = statements.reduce((acc: TypeAssignment, curr) => {
       const statementType = check(curr, E)
       if (!statementType) {
@@ -398,20 +400,20 @@ function check(node: Node | undefined, E: TypeEnvironment): TypeAssignment {
               column: 0
             }
           },
-          `Return type must be consistent: instead found ${toString(acc)} and ${toString(
+          `Return type must be consistent: instead found '${toString(acc)}' and '${toString(
             statementType
-          )}`
+          )}'`
         )
       }
       return acc
     }, undefined)
     exitEnvironment(E)
-    return returnType || VOID_TYPE
+    return returnType
   }
 
   if (tag == 'FunctionApplication') {
     const { identifier, params } = node
-    const identifierType = checkIdentifierType(E, identifier)
+    const identifierType = checkIdentifierType(identifier, E)
     if (identifierType.tag == 'Variable') {
       throw new FatalTypeError(
         {
@@ -424,7 +426,7 @@ function check(node: Node | undefined, E: TypeEnvironment): TypeAssignment {
             column: 0
           }
         },
-        `No such function: ${identifier}`
+        `Unable to locate function: '${identifier}'`
       )
     }
     const { parameterTypes: expectedTypes, returnType } = identifierType
@@ -442,7 +444,7 @@ function check(node: Node | undefined, E: TypeEnvironment): TypeAssignment {
             column: 0
           }
         },
-        `Function ${identifier} expects ${expectedLength} arguments but found ${actualLength} instead`
+        `Function '${identifier}' expects '${expectedLength}' arguments: instead found '${actualLength}'`
       )
     }
     const actualTypes = params.map(param => check(param, E))
@@ -461,11 +463,73 @@ function check(node: Node | undefined, E: TypeEnvironment): TypeAssignment {
           },
           `Function ${identifier} expects (${expectedTypes.map(type =>
             toString(type)
-          )}) but found ${actualTypes.map(type => toString(type))} instead`
+          )}): instead found ${actualTypes.map(type => toString(type))}`
         )
       }
     }
     return returnType
+  }
+
+  if (tag == 'WhileStatement') {
+    const { pred, body } = node
+    const predType = check(pred, E)
+    if (!isSameType(predType, INT_TYPE)) {
+      throw new FatalTypeError(
+        {
+          start: {
+            line: 0,
+            column: 0
+          },
+          end: {
+            line: 0,
+            column: 0
+          }
+        },
+        `While loop predicate must be int: instead found ${toString(predType)}`
+      )
+    }
+    extendEnvironment(E, 'loop')
+    const returnType = check(body, E)
+    exitEnvironment(E)
+    return returnType
+  }
+
+  if (tag == 'BreakStatement') {
+    if (!isInsideLoop(E)) {
+      throw new FatalTypeError(
+        {
+          start: {
+            line: 0,
+            column: 0
+          },
+          end: {
+            line: 0,
+            column: 0
+          }
+        },
+        `Break statement not in loop statement`
+      )
+    }
+    return
+  }
+
+  if (tag == 'ContinueStatement') {
+    if (!isInsideLoop(E)) {
+      throw new FatalTypeError(
+        {
+          start: {
+            line: 0,
+            column: 0
+          },
+          end: {
+            line: 0,
+            column: 0
+          }
+        },
+        `Continue statement not in loop statement`
+      )
+    }
+    return
   }
 
   if (tag == 'ReturnStatement') {
@@ -483,7 +547,53 @@ function check(node: Node | undefined, E: TypeEnvironment): TypeAssignment {
 
   if (tag == 'Identifier') {
     const { val } = node
-    return checkIdentifierType(E, val)
+    return checkIdentifierType(val, E)
+  }
+
+  if (tag == 'SelectionStatement') {
+    const { pred, cons, alt } = node
+    const predType = check(pred, E)
+    if (!isSameType(predType, INT_TYPE)) {
+      throw new FatalTypeError(
+        {
+          start: {
+            line: 0,
+            column: 0
+          },
+          end: {
+            line: 0,
+            column: 0
+          }
+        },
+        `Predicate expects '${toString(INT_TYPE)}': instead found '${toString(predType)}'`
+      )
+    }
+    const consType = check(cons, E)
+    if (alt) {
+      const altType = check(alt, E)
+      if (!altType || !consType) {
+        return
+      }
+      if (!isSameType(altType, consType)) {
+        throw new FatalTypeError(
+          {
+            start: {
+              line: 0,
+              column: 0
+            },
+            end: {
+              line: 0,
+              column: 0
+            }
+          },
+          `Selection statement return types must be consistent: instead found '${toString(
+            consType
+          )}' and '${toString(altType)}'`
+        )
+      }
+      return consType
+    }
+    return
   }
 
   throw new FatalTypeError(
@@ -497,11 +607,11 @@ function check(node: Node | undefined, E: TypeEnvironment): TypeAssignment {
         column: 0
       }
     },
-    `Type checking not supported for ${tag}`
+    `Type checking not supported for '${tag}'`
   )
 }
 
 export function checkTyping(program: Node) {
-  const E: TypeEnvironment = [{}]
+  const E: TypeEnvironment = [{ tag: 'block', assignments: {} }]
   check(program, E)
 }

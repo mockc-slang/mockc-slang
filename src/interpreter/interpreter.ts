@@ -6,6 +6,7 @@ import { RuntimeSourceError } from '../errors/runtimeSourceError'
 import {
   ApplicationInstruction,
   AssignmentExpressionNode,
+  AssignmentInstruction,
   BinaryOpExpressionNode,
   BinaryOpInstruction,
   BranchInstruction,
@@ -16,7 +17,6 @@ import {
   ConditionalExpressionNode,
   Context,
   DeclarationExpression,
-  DeclarationInstruction,
   DeclarationNode,
   EnvironmentRestoreInstruction,
   ExpressionListNode,
@@ -34,8 +34,11 @@ import {
   PopInstruction,
   ResetInstruction,
   ReturnStatementNode,
+  SelectionStatementNode,
   TranslationUnitNode,
-  Value
+  Value,
+  WhileInstruction,
+  WhileStatementNode
 } from '../types'
 import { Memory } from './memory'
 
@@ -241,9 +244,13 @@ type InterpreterContext = {
   closurePool: ClosureExpression[]
 }
 
-const declare = (sym: string, val: Value, interpreterContext: InterpreterContext) => {
+const isTrue = (val: any) => {
+  return val !== 0
+}
+
+const assign = (identifier: string, val: Value, interpreterContext: InterpreterContext) => {
   const { variableLookupEnv, env, memory } = interpreterContext
-  const pos = lookupVairable(sym, variableLookupEnv)
+  const pos = lookupVairable(identifier, variableLookupEnv)
   memory.setEnvironmentValue(env, pos, val)
 }
 
@@ -286,6 +293,9 @@ const lookupVairable = (sym: string, lookupEnv: string[][]) => {
   let frameIndex = lookupEnv.length
   let valueIndex = -1
   while (valueIndex == -1) {
+    if (frameIndex == 0) {
+      throw new Error(`undefined reference to ${sym}`)
+    }
     const frame = lookupEnv[--frameIndex]
     for (let i = 0; i < frame.length; i++) {
       if (frame[i] === sym) {
@@ -299,7 +309,6 @@ const lookupVairable = (sym: string, lookupEnv: string[][]) => {
 
 const applyBinaryOp = (sym: string, leftOperand: Value, rightOperand: Value): Value =>
   binaryOpMicrocode[sym](leftOperand, rightOperand)
-
 const popInstruction: PopInstruction = { tag: 'Pop' }
 const markInstruction: MarkInstruction = { tag: 'MarkInstruction' }
 const resetInstruction: ResetInstruction = { tag: 'ResetInstruction' }
@@ -320,13 +329,23 @@ const createEnvironmentRestoreInstruction = (
 
 const binaryOpMicrocode = {
   '+': (x: number, y: number) => x + y,
-  '-': (x: number, y: number) => x - y
+  '-': (x: number, y: number) => x - y,
+  '==': (x: number, y: number) => (x == y ? 1 : 0),
+  '!=': (x: number, y: number) => (x != y ? 1 : 0)
 }
 
-const pop = (stash: Value[]) => {
+const popStash = (stash: Value[]) => {
   const val = stash.pop()
-  if (!val) {
+  if (val == undefined) {
     throw Error('internal error: expected value from stash')
+  }
+  return val
+}
+
+const popAgenda = (agenda: Command[]) => {
+  const val = agenda.pop()
+  if (val == undefined) {
+    throw Error('internal error: expected value from agenda')
   }
   return val
 }
@@ -358,13 +377,9 @@ const microcode = {
     const externalDeclarationCmds: Command[] = []
     externalDeclarations.forEach(node => {
       externalDeclarationCmds.push(node)
-      externalDeclarationCmds.push(popInstruction)
     })
 
-    if (locals.includes('main')) {
-      externalDeclarationCmds.push({ tag: 'FunctionApplication', identifier: 'main', params: [] })
-    }
-
+    externalDeclarationCmds.push({ tag: 'FunctionApplication', identifier: 'main', params: [] })
     externalDeclarationCmds.reverse()
     agenda.push(...externalDeclarationCmds)
   },
@@ -372,16 +387,16 @@ const microcode = {
   FunctionDefinition: (cmd: Command, interpreterContext: InterpreterContext) => {
     const { agenda } = interpreterContext
 
-    const { type, declarator, compoundStatement } = cmd as FunctionDefinitionNode
+    const { type, declarator, body } = cmd as FunctionDefinitionNode
     const { directDeclarator } = declarator // TODO: handle pointer
     const { identifier, parameterList } = directDeclarator
-    agenda.push({ tag: 'Number', val: 0 }, popInstruction, {
+    agenda.push({
       tag: 'DeclarationExpression',
-      sym: identifier,
+      identifier,
       expr: {
         tag: 'LambdaExpression',
         prms: parameterList,
-        body: compoundStatement
+        body
       }
     })
   },
@@ -409,16 +424,15 @@ const microcode = {
   Declaration: (cmd: Command, interpreterContext: InterpreterContext) => {
     const { agenda } = interpreterContext
 
-    const type = (cmd as DeclarationNode).type
     const { identifier, initializer } = cmd as DeclarationNode
     if (!initializer) {
       // TODO: handle identifier only situation
       return
     }
     if (initializer.expr) {
-      agenda.push({ tag: 'Number', val: 0 }, popInstruction, {
+      agenda.push({
         tag: 'DeclarationExpression',
-        sym: identifier,
+        identifier,
         expr: initializer.expr
       })
     }
@@ -438,9 +452,7 @@ const microcode = {
     const orderedStatements: Command[] = []
     statements.forEach(node => {
       orderedStatements.push(node)
-      orderedStatements.push(popInstruction)
     })
-    orderedStatements.pop()
     orderedStatements.reverse()
     agenda.push(...orderedStatements)
   },
@@ -494,10 +506,10 @@ const microcode = {
 
     const args: any[] = []
     for (let i = arity - 1; i >= 0; i--) {
-      args[i] = stash.pop()
+      args[i] = popStash(stash)
     }
 
-    const func = stash.pop() as ClosureExpression
+    const func = popStash(stash) as ClosureExpression
     const params = scanParameters(func.prms)
     interpreterContext.variableLookupEnv = extendVariableLookupEnv(params, variableLookupEnv)
     const frameAddress = memory.allocateFrame(params.length)
@@ -520,30 +532,32 @@ const microcode = {
   DeclarationExpression: (cmd: Command, interpreterContext: InterpreterContext) => {
     const { agenda } = interpreterContext
 
-    const { sym, expr } = cmd as DeclarationExpression
+    const { identifier, expr } = cmd as DeclarationExpression
     agenda.push(
       {
-        tag: 'DeclarationInstruction',
-        sym
+        tag: 'AssignmentInstruction',
+        identifier
       },
       expr
     )
   },
 
-  DeclarationInstruction: (cmd: Command, interpreterContext: InterpreterContext) => {
+  AssignmentInstruction: (cmd: Command, interpreterContext: InterpreterContext) => {
     const { stash, memory } = interpreterContext
-    const { sym } = cmd as DeclarationInstruction
-    declare(sym, peek(stash), interpreterContext)
+    const { identifier } = cmd as AssignmentInstruction
+    assign(identifier, popStash(stash), interpreterContext)
   },
 
   AssignmentExpression: (cmd: Command, interpreterContext: InterpreterContext) => {
     const { agenda } = interpreterContext
-
-    // TODO: handle other expression cases
-    const { expr } = cmd as AssignmentExpressionNode
-    if (expr) {
-      agenda.push(expr)
-    }
+    const { identifier, expr } = cmd as AssignmentExpressionNode
+    agenda.push(
+      {
+        tag: 'AssignmentInstruction',
+        identifier
+      },
+      expr
+    )
   },
 
   Identifier: (cmd: Command, interpreterContext: InterpreterContext) => {
@@ -563,8 +577,20 @@ const microcode = {
 
   ConditionalExpression: (cmd: Command, interpreterContext: InterpreterContext) => {
     const { agenda } = interpreterContext
-
     const { pred, cons, alt } = cmd as ConditionalExpressionNode
+    agenda.push(
+      {
+        tag: 'BranchInstruction',
+        cons,
+        alt
+      },
+      pred
+    )
+  },
+
+  SelectionStatement: (cmd: Command, interpreterContext: InterpreterContext) => {
+    const { agenda } = interpreterContext
+    const { pred, cons, alt } = cmd as SelectionStatementNode
     agenda.push(
       {
         tag: 'BranchInstruction',
@@ -579,8 +605,14 @@ const microcode = {
     const { agenda, stash } = interpreterContext
 
     const { cons, alt } = cmd as BranchInstruction
-    agenda.push(pop(stash) !== 0 ? cons : alt)
+    if (isTrue(popStash(stash))) {
+      agenda.push(cons)
+    } else if (alt) {
+      agenda.push(alt)
+    }
   },
+
+  MarkInstruction: (cmd: Command, interpreterContext: InterpreterContext) => {},
 
   BinaryOpExpression: (cmd: Command, interpreterContext: InterpreterContext) => {
     const { agenda } = interpreterContext
@@ -593,8 +625,8 @@ const microcode = {
     const { stash } = interpreterContext
 
     const { sym } = cmd as BinaryOpInstruction
-    const rightOperand = pop(stash)
-    const leftOperand = pop(stash)
+    const rightOperand = popStash(stash)
+    const leftOperand = popStash(stash)
     stash.push(applyBinaryOp(sym, leftOperand, rightOperand))
   },
 
@@ -612,6 +644,60 @@ const microcode = {
     agenda.push(...expressionListCmds)
   },
 
+  WhileStatement: (cmd: Command, interpreterContext: InterpreterContext) => {
+    const { agenda } = interpreterContext
+    const { pred, body } = cmd as WhileStatementNode
+    agenda.push(
+      {
+        tag: 'WhileInstruction',
+        pred,
+        body
+      },
+      pred
+    )
+  },
+
+  WhileInstruction: (cmd: Command, interpreterContext: InterpreterContext) => {
+    const { agenda, stash } = interpreterContext
+    const { pred, body } = cmd as WhileInstruction
+    if (isTrue(popStash(stash))) {
+      agenda.push(cmd, pred, body)
+    }
+  },
+
+  BreakStatement: (cmd: Command, interpreterContext: InterpreterContext) => {
+    const { agenda } = interpreterContext
+    const a = popAgenda(agenda)
+    if (a.tag == 'WhileInstruction') return
+
+    if (a.tag == 'EnvironmentRestoreInstruction') {
+      // TODO: restore environment
+    }
+    agenda.push(cmd)
+  },
+
+  ContinueStatement: (cmd: Command, interpreterContext: InterpreterContext) => {
+    const { agenda } = interpreterContext
+    const a = popAgenda(agenda)
+    if (a.tag == 'WhileInstruction') {
+      const { pred, body } = a
+      agenda.push(
+        {
+          tag: 'WhileInstruction',
+          pred,
+          body
+        },
+        pred
+      )
+      return
+    }
+
+    if (a.tag == 'EnvironmentRestoreInstruction') {
+      // TODO: restore environment
+    }
+    agenda.push(cmd)
+  },
+
   Number: (cmd: Command, interpreterContext: InterpreterContext) => {
     const { stash } = interpreterContext
 
@@ -620,7 +706,8 @@ const microcode = {
   },
 
   Pop: (cmd: Command, interpreterContext: InterpreterContext) => {
-    interpreterContext.stash.pop()
+    const { stash } = interpreterContext
+    popStash(stash)
   }
 }
 

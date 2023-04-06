@@ -59,7 +59,6 @@ import {
 import { MockCVisitor } from '../lang/MockCVisitor'
 import { checkTyping, FatalTypeError } from '../typechecker/typechecker'
 import {
-  AssignmentExpressionNode,
   CompilationUnitNode,
   CompoundStatementNode,
   Context,
@@ -76,16 +75,17 @@ import {
   IdentifierNode,
   InitDeclaratorNode,
   InitializerNode,
+  IterationStatementNode,
   JumpStatementNode,
   Node,
   ParameterDeclarationNode,
   ParameterListNode,
+  SelectionStatementNode,
   SourceError,
   StatementNode,
   TranslationUnitNode,
   TypeSpecifierNode
 } from '../types'
-import { stripIndent } from '../utils/formatters'
 
 // export class DisallowedConstructError implements SourceError {
 //   public type = ErrorType.SYNTAX
@@ -244,7 +244,7 @@ class NodeGenerator implements MockCVisitor<Node> {
       tag: 'FunctionDefinition',
       type: ctx.typeSpecifier().text,
       declarator: ctx.declarator().accept(this) as DeclaratorNode,
-      compoundStatement: ctx.compoundStatement().accept(this) as CompoundStatementNode
+      body: ctx.compoundStatement().accept(this) as CompoundStatementNode
     }
   }
 
@@ -326,7 +326,17 @@ class NodeGenerator implements MockCVisitor<Node> {
 
   visitEqualityExpression(ctx: EqualityExpressionContext): ExpressionNode {
     // TODO: Check for equality expression
-    return ctx.relationalExpression().accept(this) as ExpressionNode
+    const equalityExpression = ctx.equalityExpression()?.accept(this) as ExpressionNode
+    const relationalExpression = ctx.relationalExpression().accept(this) as ExpressionNode
+    if (equalityExpression) {
+      return {
+        tag: 'BinaryOpExpression',
+        sym: ctx.getChild(1).text,
+        leftExpr: equalityExpression,
+        rightExpr: relationalExpression
+      }
+    }
+    return relationalExpression
   }
 
   visitRelationalExpression(ctx: RelationalExpressionContext): ExpressionNode {
@@ -579,11 +589,25 @@ class NodeGenerator implements MockCVisitor<Node> {
     }
   }
 
-  visitSelectionStatement?: ((ctx: SelectionStatementContext) => Node) | undefined
-  visitIterationStatement?: ((ctx: IterationStatementContext) => Node) | undefined
+  visitSelectionStatement(ctx: SelectionStatementContext): SelectionStatementNode {
+    const statements = ctx.statement()
+    return {
+      tag: 'SelectionStatement',
+      pred: ctx.expressionList().accept(this) as ExpressionListNode,
+      cons: statements[0].accept(this) as StatementNode,
+      alt: statements.length > 1 ? (statements[1].accept(this) as StatementNode) : undefined
+    }
+  }
+
+  visitIterationStatement(ctx: IterationStatementContext): IterationStatementNode {
+    return {
+      tag: 'WhileStatement',
+      pred: ctx.expressionList().accept(this) as ExpressionListNode,
+      body: ctx.statement().accept(this) as StatementNode
+    }
+  }
 
   visitJumpStatement(ctx: JumpStatementContext): JumpStatementNode {
-    const expressionList = ctx.expressionList()
     const keyword = ctx.getChild(0).text
     if (keyword == 'return') {
       return {
@@ -595,8 +619,14 @@ class NodeGenerator implements MockCVisitor<Node> {
       }
     }
 
+    if (keyword == 'break') {
+      return {
+        tag: 'BreakStatement'
+      }
+    }
+
     return {
-      tag: 'BreakStatement'
+      tag: 'ContinueStatement'
     }
   }
 
