@@ -544,7 +544,7 @@ const microcode = {
   AssignmentInstruction: (cmd: Command, interpreterContext: InterpreterContext) => {
     const { stash, memory } = interpreterContext
     const { identifier } = cmd as AssignmentInstruction
-    assign(identifier, peek(stash), interpreterContext)
+    assign(identifier, popStash(stash), interpreterContext)
   },
 
   AssignmentExpression: (cmd: Command, interpreterContext: InterpreterContext) => {
