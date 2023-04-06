@@ -430,8 +430,7 @@ export type PopInstruction = {
 
 export type EnvironmentRestoreInstruction = {
   tag: 'EnvironmentRestoreInstruction'
-  // [oldEnv, newEnv], array is used to avoid NaN malform
-  env: number[]
+  env: DataView
   variableLookupEnv: string[][]
 }
 

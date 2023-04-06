@@ -1,5 +1,6 @@
 /* tslint:disable:max-classes-per-file */
 
+import { create } from 'domain'
 import { RuntimeSourceError } from '../errors/runtimeSourceError'
 import {
   ApplicationInstruction,
@@ -302,6 +303,20 @@ const popInstruction: PopInstruction = { tag: 'Pop' }
 const markInstruction: MarkInstruction = { tag: 'MarkInstruction' }
 const resetInstruction: ResetInstruction = { tag: 'ResetInstruction' }
 
+const createEnvironmentRestoreInstruction = (
+  env: number,
+  lookupEnv: string[][]
+): EnvironmentRestoreInstruction => {
+  const word = new ArrayBuffer(8)
+  const view = new DataView(word)
+  view.setFloat64(0, env)
+  return {
+    tag: 'EnvironmentRestoreInstruction',
+    env: view,
+    variableLookupEnv: lookupEnv
+  }
+}
+
 const binaryOpMicrocode = {
   '+': (x: number, y: number) => x + y,
   '-': (x: number, y: number) => x - y
@@ -417,11 +432,7 @@ const microcode = {
     const frameAddress = rts.allocateFrame(locals.length)
     interpreterContext.env = rts.environmentExtend(frameAddress, env)
 
-    agenda.push({
-      tag: 'EnvironmentRestoreInstruction',
-      env: [env, interpreterContext.env],
-      variableLookupEnv
-    })
+    agenda.push(createEnvironmentRestoreInstruction(env, variableLookupEnv))
 
     const orderedStatements: Command[] = []
     statements.forEach(node => {
@@ -436,9 +447,10 @@ const microcode = {
   EnvironmentRestoreInstruction: (cmd: Command, interpreterContext: InterpreterContext) => {
     const { env, variableLookupEnv } = cmd as EnvironmentRestoreInstruction
     const { agenda, rts } = interpreterContext
-    const oldEnv = env[0]
+    const oldEnv = env.getFloat64(0)
     interpreterContext.env = oldEnv
     interpreterContext.variableLookupEnv = variableLookupEnv
+    rts.deallocateEnvironment(oldEnv)
   },
 
   ReturnStatement: (cmd: Command, interpreterContext: InterpreterContext) => {
@@ -450,7 +462,6 @@ const microcode = {
   },
 
   ResetInstruction: (cmd: Command, interpreterContext: InterpreterContext) => {
-    // TODO: check for env restore when popping, for RTS restoration
     const { agenda } = interpreterContext
     const nextInstr = agenda.pop()
     if (nextInstr && nextInstr.tag != 'MarkInstruction') {
@@ -499,12 +510,7 @@ const microcode = {
     if (agenda.length == 0 || (peek(agenda) as Command).tag == 'EnvironmentRestoreInstruction') {
       agenda.push(markInstruction)
     } else {
-      const eri: EnvironmentRestoreInstruction = {
-        tag: 'EnvironmentRestoreInstruction',
-        env: [env, interpreterContext.env],
-        variableLookupEnv
-      }
-      agenda.push(eri)
+      agenda.push(createEnvironmentRestoreInstruction(env, variableLookupEnv))
       agenda.push(markInstruction)
     }
     agenda.push(func.body)
