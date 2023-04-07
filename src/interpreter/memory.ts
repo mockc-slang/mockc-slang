@@ -274,7 +274,9 @@ export class Memory {
   }
 
   wordToCValue(x: number): string {
-    return this.isUndefined(x)
+    return isNaN(x)
+      ? Memory.wordToString(x)
+      : this.isUndefined(x)
       ? '<undefined>'
       : this.isUnassigned(x)
       ? '<unassigned>'
@@ -286,8 +288,6 @@ export class Memory {
       ? '<closure>'
       : this.isBuiltin(x)
       ? '<builtin>'
-      : String(isNaN(x))
-      ? Memory.wordToString(x)
       : String(x)
   }
 

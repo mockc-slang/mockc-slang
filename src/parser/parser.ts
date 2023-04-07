@@ -456,7 +456,7 @@ class NodeGenerator implements MockCVisitor<Node> {
     if (stringLiteralNode) {
       return {
         tag: 'StringLiteral',
-        val: stringLiteralNode.text
+        val: stringLiteralNode.text.slice(1, -1)
       }
     }
 

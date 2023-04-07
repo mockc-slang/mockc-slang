@@ -37,6 +37,7 @@ import {
   ResetInstruction,
   ReturnStatementNode,
   SelectionStatementNode,
+  StringLiteralNode,
   TranslationUnitNode,
   UnaryExpressionNode,
   Value,
@@ -53,6 +54,73 @@ type InterpreterContext = {
   variableLookupEnv: string[][]
   closurePool: ClosureExpression[]
   context: Context
+  builtinEnv: BuiltinEnv
+}
+
+type BuiltinEnv = {
+  builtinObject: object
+  builtinArray: string[]
+}
+
+const setUpInterpreterContext = (context: Context, node: any): InterpreterContext => {
+  const memory = new Memory(10)
+  const env = memory.createGlobalEnvironment()
+
+  const builtinArray: string[] = []
+  const builtinObject = {
+    printf: {
+      arity: 1,
+      func: (interpreterContext: InterpreterContext) => {
+        const { context, memory, stash } = interpreterContext
+        const val = popStash(interpreterContext, false)
+        if (typeof val === 'string') {
+          context.externalBuiltIns.rawDisplay('', val, context)
+        } else {
+          context.externalBuiltIns.rawDisplay('', memory.wordToCValue(val), context)
+        }
+      }
+    }
+  }
+
+  let i = 0
+  for (const key in builtinObject) {
+    builtinArray[i++] = key
+  }
+
+  const builtinEnv = {
+    builtinObject,
+    builtinArray
+  }
+
+  const frameAddress = memory.allocateFrame(builtinArray.length)
+  builtinArray.forEach((_, index: number) => {
+    memory.setFrameValue(frameAddress, index, memory.makeBuiltin(index))
+  })
+
+  const globalEnv = memory.environmentExtend(frameAddress, env)
+
+  const interpreterContext: InterpreterContext = {
+    agenda: [node],
+    stash: [],
+    memory: memory,
+    env: globalEnv,
+    variableLookupEnv: [builtinArray], // TODO: add primitives / builtins here
+    closurePool: [],
+    context,
+    builtinEnv
+  }
+
+  return interpreterContext
+}
+
+const applyBuiltin = (builtinId: number, interpreterContext: InterpreterContext) => {
+  const { builtinEnv, stash } = interpreterContext
+  const { builtinArray, builtinObject } = builtinEnv
+  const funcName = builtinArray[builtinId]
+  const func = builtinObject[funcName].func
+  const result = func(interpreterContext)
+  popStash(interpreterContext, false)
+  if (result != undefined) stash.push(result)
 }
 
 const isTrue = (val: any) => {
@@ -162,12 +230,19 @@ const popStash = (interpreterContext: InterpreterContext, deref: boolean = true)
   return derefStashVal(val, interpreterContext)
 }
 
-const peekStash = (interpreterContext: InterpreterContext, deref: boolean = true) => {
+const peekStash = (
+  interpreterContext: InterpreterContext,
+  deref: boolean = true,
+  index: number = 0
+) => {
   const { stash } = interpreterContext
   if (stash.length == 0) {
     throw Error('internal error: expected value from stash')
   }
-  const val = stash[stash.length - 1]
+  if (index >= stash.length) {
+    throw Error('internal error: peek index exceeds stash size')
+  }
+  const val = stash[stash.length - index - 1]
   if (!deref) {
     return val
   }
@@ -180,6 +255,13 @@ const popAgenda = (agenda: Command[]) => {
     throw Error('internal error: expected value from agenda')
   }
   return val
+}
+
+const peekAgenda = (agenda: Command[]) => {
+  if (agenda.length == 0) {
+    throw Error('internal error: expected value from agenda')
+  }
+  return agenda[agenda.length - 1]
 }
 
 const microcode = {
@@ -197,7 +279,8 @@ const microcode = {
     const locals = scanDeclarations(externalDeclarations)
     interpreterContext.variableLookupEnv = extendVariableLookupEnv(locals, variableLookupEnv)
     const frameAddress = memory.allocateFrame(locals.length)
-    interpreterContext.env = memory.environmentExtend(frameAddress, env)
+    const newEnv = memory.environmentExtend(frameAddress, env)
+    interpreterContext.env = newEnv
 
     const externalDeclarationCmds: Command[] = []
     externalDeclarations.forEach(node => {
@@ -340,13 +423,18 @@ const microcode = {
     const { env, agenda, variableLookupEnv, memory } = interpreterContext
     const { arity } = cmd as ApplicationInstruction
 
+    const func = peekStash(interpreterContext, true, arity)
+    if (memory.isBuiltin(func)) {
+      return applyBuiltin(memory.getIdFromBuiltin(func), interpreterContext)
+    }
+
     const args: any[] = []
     for (let i = arity - 1; i >= 0; i--) {
       args[i] = popStash(interpreterContext)
     }
 
-    const func = popStash(interpreterContext)
-    const params = scanParameters(func.prms)
+    const closure = popStash(interpreterContext) as ClosureExpression
+    const params = scanParameters(closure.prms)
     interpreterContext.variableLookupEnv = extendVariableLookupEnv(params, variableLookupEnv)
     const frameAddress = memory.allocateFrame(params.length)
     interpreterContext.env = memory.environmentExtend(frameAddress, env)
@@ -354,11 +442,9 @@ const microcode = {
       memory.setFrameValue(frameAddress, i, args[i])
     }
 
-    // TODO: implement builtin here
-    // if (func.tag == 'builtin') { }
     if (
       agenda.length == 0 ||
-      (agenda[agenda.length - 1] as Command).tag == 'EnvironmentRestoreInstruction'
+      (peekAgenda(agenda) as Command).tag == 'EnvironmentRestoreInstruction'
     ) {
       agenda.push(markInstruction)
     } else {
@@ -550,6 +636,13 @@ const microcode = {
     stash.push(val)
   },
 
+  StringLiteral: (cmd: Command, interpreterContext: InterpreterContext) => {
+    // implemented only for more verbose printf
+    const { stash } = interpreterContext
+    const { val } = cmd as StringLiteralNode
+    stash.push(val)
+  },
+
   Pop: (cmd: Command, interpreterContext: InterpreterContext) => {
     popStash(interpreterContext)
   }
@@ -565,8 +658,6 @@ function runInterpreter(context: Context, interpreterContext: InterpreterContext
   const step_limit = 1000000
 
   const { stash, agenda, memory } = interpreterContext
-
-  interpreterContext.env = memory.createGlobalEnvironment()
 
   let i = 0
   while (i < step_limit) {
@@ -591,17 +682,7 @@ export function* evaluate(node: Node, context: Context) {
   try {
     context.runtime.isRunning = true
 
-    const interpreterContext: InterpreterContext = {
-      agenda: [node],
-      stash: [],
-      memory: new Memory(10),
-      env: 0,
-      variableLookupEnv: [], // TODO: add primitives / builtins here
-      closurePool: [],
-      context: context
-    }
-
-    interpreterContext.env = interpreterContext.memory.createGlobalEnvironment()
+    const interpreterContext = setUpInterpreterContext(context, node)
 
     return runInterpreter(context, interpreterContext)
   } catch (error) {
