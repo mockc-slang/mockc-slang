@@ -350,7 +350,7 @@ const popAgenda = (agenda: Command[]) => {
   return val
 }
 
-const peek = (stash: Value[]) => {
+const peekStash = (stash: Value[]) => {
   if (stash.length == 0) {
     throw Error('internal error: expected value from stash')
   }
@@ -387,10 +387,10 @@ const microcode = {
   FunctionDefinition: (cmd: Command, interpreterContext: InterpreterContext) => {
     const { agenda } = interpreterContext
 
-    const { type, declarator, body } = cmd as FunctionDefinitionNode
+    const { declarator, body } = cmd as FunctionDefinitionNode
     const { directDeclarator } = declarator // TODO: handle pointer
     const { identifier, parameterList } = directDeclarator
-    agenda.push({
+    agenda.push(popInstruction, {
       tag: 'DeclarationExpression',
       identifier,
       expr: {
@@ -435,7 +435,7 @@ const microcode = {
       return
     }
     if (initializer.expr) {
-      agenda.push({
+      agenda.push(popInstruction, {
         tag: 'DeclarationExpression',
         identifier,
         expr: initializer.expr
@@ -525,7 +525,10 @@ const microcode = {
 
     // TODO: implement builtin here
     // if (func.tag == 'builtin') { }
-    if (agenda.length == 0 || (peek(agenda) as Command).tag == 'EnvironmentRestoreInstruction') {
+    if (
+      agenda.length == 0 ||
+      (peekStash(agenda) as Command).tag == 'EnvironmentRestoreInstruction'
+    ) {
       agenda.push(markInstruction)
     } else {
       agenda.push(createEnvironmentRestoreInstruction(env, variableLookupEnv))
@@ -548,9 +551,9 @@ const microcode = {
   },
 
   AssignmentInstruction: (cmd: Command, interpreterContext: InterpreterContext) => {
-    const { stash, memory } = interpreterContext
+    const { stash } = interpreterContext
     const { identifier } = cmd as AssignmentInstruction
-    assign(identifier, popStash(stash), interpreterContext)
+    assign(identifier, peekStash(stash), interpreterContext)
   },
 
   AssignmentExpression: (cmd: Command, interpreterContext: InterpreterContext) => {
