@@ -691,8 +691,8 @@ export function parse(source: string, context: Context) {
     try {
       const tree = parser.compilationUnit()
       program = convertSource(tree)
-      console.log(JSON.stringify(program, undefined, 2), 'final tree')
-      // checkTyping(program)
+      // console.log(JSON.stringify(program, undefined, 2), 'final tree')
+      checkTyping(program)
     } catch (error) {
       if (error instanceof FatalSyntaxError || error instanceof FatalTypeError) {
         context.errors.push(error)
