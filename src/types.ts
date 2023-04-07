@@ -147,7 +147,7 @@ export interface Context<T = any> {
    * If defined, the user should call the appropriate method instead.
    * E.g. display in web application
    */
-  externalBuiltIns?: CustomBuiltIns
+  externalBuiltIns: CustomBuiltIns
 }
 
 export type ModuleContext = {

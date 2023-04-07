@@ -52,6 +52,7 @@ type InterpreterContext = {
   env: number
   variableLookupEnv: string[][]
   closurePool: ClosureExpression[]
+  context: Context
 }
 
 const isTrue = (val: any) => {
@@ -555,11 +556,7 @@ const microcode = {
 }
 
 function debugPrint(str: string, ctx: Context): void {
-  if (ctx.externalBuiltIns?.rawDisplay) {
-    ctx.externalBuiltIns.rawDisplay('', str, ctx)
-  } else {
-    console.log(str)
-  }
+  ctx.externalBuiltIns.rawDisplay('', str, ctx)
 }
 
 function runInterpreter(context: Context, interpreterContext: InterpreterContext) {
@@ -600,10 +597,9 @@ export function* evaluate(node: Node, context: Context) {
       memory: new Memory(10),
       env: 0,
       variableLookupEnv: [], // TODO: add primitives / builtins here
-      closurePool: []
+      closurePool: [],
+      context: context
     }
-
-    // debugPrint('test if this shows', context)
 
     interpreterContext.env = interpreterContext.memory.createGlobalEnvironment()
 

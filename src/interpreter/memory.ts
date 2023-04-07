@@ -66,12 +66,12 @@ export class Memory {
       throw Error('Maximum size of memory should not exceed 2**12 megabytes')
     }
     const data = new ArrayBuffer(Memory.Mega * megaBytes)
-    this.stackLimit = (Memory.Mega * megaBytes) / 2
-    this.heapLimit = Memory.Mega * megaBytes
+    this.stackLimit = (Memory.Mega * megaBytes) / 2 / Memory.WordSize
+    this.heapLimit = (Memory.Mega * megaBytes) / Memory.WordSize
     this.view = new DataView(data)
     this.stackFree = 0
-    this.heapFree = (Memory.Mega * megaBytes) / 2
-    this.heapStartingPoint = (Memory.Mega * megaBytes) / 2
+    this.heapFree = (Memory.Mega * megaBytes) / 2 / Memory.WordSize
+    this.heapStartingPoint = this.heapFree
   }
 
   static testNanBoxing() {
@@ -420,6 +420,7 @@ export class Memory {
   allocateEnvironment(size: number) {
     const envIndex = this.stackFree
     this.stackFree += Memory.EnvironmentFramesOffset + size
+    if (this.stackFree >= this.stackLimit) console.log('exceeded')
     this.setTaggedNaNAtIndex(envIndex, Memory.EnvironmentTag)
     this.setWordAtIndex(envIndex + Memory.EnvironmentSizeOffset, size)
     return this.makeAddress(envIndex)
