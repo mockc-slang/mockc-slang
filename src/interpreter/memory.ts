@@ -420,7 +420,6 @@ export class Memory {
   allocateEnvironment(size: number) {
     const envIndex = this.stackFree
     this.stackFree += Memory.EnvironmentFramesOffset + size
-    if (this.stackFree >= this.stackLimit) console.log('exceeded')
     this.setTaggedNaNAtIndex(envIndex, Memory.EnvironmentTag)
     this.setWordAtIndex(envIndex + Memory.EnvironmentSizeOffset, size)
     return this.makeAddress(envIndex)

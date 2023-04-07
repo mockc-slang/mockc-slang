@@ -164,8 +164,7 @@ const microcode = {
     const locals = scanDeclarations(externalDeclarations)
     interpreterContext.variableLookupEnv = extendVariableLookupEnv(locals, variableLookupEnv)
     const frameAddress = memory.allocateFrame(locals.length)
-    const newEnv = memory.environmentExtend(frameAddress, env)
-    interpreterContext.env = newEnv
+    interpreterContext.env = memory.environmentExtend(frameAddress, env)
 
     const externalDeclarationCmds: Command[] = []
     externalDeclarations.forEach(node => {
