@@ -393,7 +393,7 @@ export type Command =
   | Node
   | DeclarationExpression
   | LambdaExpression
-  | FunctionExpression
+  | ClosureExpression
   | Instruction
 
 export type Instruction =
@@ -408,8 +408,6 @@ export type Instruction =
   | WhileInstruction
   | LoadAddressInstruction
   | DerefStashValueInstruction
-
-export type FunctionExpression = ClosureExpression | BuiltinExpression
 
 export type DeclarationExpression = {
   tag: 'DeclarationExpression'
@@ -480,10 +478,6 @@ export type ClosureExpression = {
   tag: 'Closure'
   prms: ParameterListNode
   body: CompoundStatementNode
-}
-
-export type BuiltinExpression = {
-  tag: 'Builtin'
 }
 
 export type Node =
