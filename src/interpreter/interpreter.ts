@@ -459,7 +459,7 @@ const microcode = {
 
   EnvironmentRestoreInstruction: (cmd: Command, interpreterContext: InterpreterContext) => {
     const { env, variableLookupEnv } = cmd as EnvironmentRestoreInstruction
-    const { agenda, memory } = interpreterContext
+    const { memory } = interpreterContext
     const oldEnv = env.getFloat64(0)
     interpreterContext.env = oldEnv
     interpreterContext.variableLookupEnv = variableLookupEnv
@@ -670,10 +670,10 @@ const microcode = {
     const a = popAgenda(agenda)
     if (a.tag == 'WhileInstruction') return
 
-    if (a.tag == 'EnvironmentRestoreInstruction') {
-      // TODO: restore environment
-    }
     agenda.push(cmd)
+    if (a.tag == 'EnvironmentRestoreInstruction') {
+      agenda.push(a)
+    }
   },
 
   ContinueStatement: (cmd: Command, interpreterContext: InterpreterContext) => {
@@ -692,10 +692,10 @@ const microcode = {
       return
     }
 
-    if (a.tag == 'EnvironmentRestoreInstruction') {
-      // TODO: restore environment
-    }
     agenda.push(cmd)
+    if (a.tag == 'EnvironmentRestoreInstruction') {
+      agenda.push(a)
+    }
   },
 
   Number: (cmd: Command, interpreterContext: InterpreterContext) => {
