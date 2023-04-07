@@ -18,6 +18,7 @@ import {
   Context,
   DeclarationExpression,
   DeclarationNode,
+  DerefStashValueInstruction,
   EnvironmentRestoreInstruction,
   ExpressionListNode,
   ExpressionStatementNode,
@@ -54,12 +55,6 @@ type InterpreterContext = {
 
 const isTrue = (val: any) => {
   return val !== 0
-}
-
-const assign = (identifier: string, val: Value, interpreterContext: InterpreterContext) => {
-  const { variableLookupEnv, env, memory } = interpreterContext
-  const pos = lookupVariable(identifier, variableLookupEnv)
-  memory.setEnvironmentValue(env, pos, val)
 }
 
 const scanDeclarations = (cmds: Command[]): string[] => {
@@ -121,6 +116,7 @@ const popInstruction: PopInstruction = { tag: 'Pop' }
 const markInstruction: MarkInstruction = { tag: 'MarkInstruction' }
 const resetInstruction: ResetInstruction = { tag: 'ResetInstruction' }
 const assignmentInstruction: AssignmentInstruction = { tag: 'AssignmentInstruction' }
+const derefStackValueInstruction: DerefStashValueInstruction = { tag: 'DerefStashValueInstruction' }
 
 const createEnvironmentRestoreInstruction = (
   env: number,
@@ -143,7 +139,17 @@ const binaryOpMicrocode = {
   '!=': (x: number, y: number) => (x != y ? 1 : 0)
 }
 
-const popStash = (stash: Value[], memory: Memory, deref: boolean = true) => {
+const derefStashVal = (val: any, interpreterContext: InterpreterContext) => {
+  const { memory, closurePool } = interpreterContext
+  if (!memory.isAddress(val)) {
+    return val
+  }
+  const payload = memory.addressDeref(val)
+  return memory.isClosure(payload) ? closurePool[memory.getClosurePoolIndex(payload)] : payload
+}
+
+const popStash = (interpreterContext: InterpreterContext, deref: boolean = true) => {
+  const { stash } = interpreterContext
   const val = stash.pop()
   if (val == undefined) {
     throw Error('internal error: expected value from stash')
@@ -151,7 +157,19 @@ const popStash = (stash: Value[], memory: Memory, deref: boolean = true) => {
   if (!deref) {
     return val
   }
-  return isNaN(val) ? memory.addressDeref(val) : val
+  return derefStashVal(val, interpreterContext)
+}
+
+const peekStash = (interpreterContext: InterpreterContext, deref: boolean = true) => {
+  const { stash } = interpreterContext
+  if (stash.length == 0) {
+    throw Error('internal error: expected value from stash')
+  }
+  const val = stash[stash.length - 1]
+  if (!deref) {
+    return val
+  }
+  return derefStashVal(val, interpreterContext)
 }
 
 const popAgenda = (agenda: Command[]) => {
@@ -160,17 +178,6 @@ const popAgenda = (agenda: Command[]) => {
     throw Error('internal error: expected value from agenda')
   }
   return val
-}
-
-const peekStash = (stash: Value[], memory: Memory, deref: boolean = true) => {
-  if (stash.length == 0) {
-    throw Error('internal error: expected value from stash')
-  }
-  const val = stash[stash.length - 1]
-  if (!deref) {
-    return val
-  }
-  return isNaN(val) ? memory.addressDeref(val) : val
 }
 
 const microcode = {
@@ -291,6 +298,9 @@ const microcode = {
     const { agenda } = interpreterContext
     const { exprs } = (cmd as ReturnStatementNode).exprs
     agenda.push(resetInstruction)
+    if (exprs.length > 0) {
+      agenda.push(derefStackValueInstruction)
+    }
     const orderedExprs = exprs.slice().reverse()
     agenda.push(...orderedExprs)
   },
@@ -301,6 +311,11 @@ const microcode = {
     if (nextInstr && nextInstr.tag != 'MarkInstruction') {
       agenda.push(cmd)
     }
+  },
+
+  DerefStashValueInstruction: (cmd: Command, interpreterContext: InterpreterContext) => {
+    const { stash } = interpreterContext
+    stash.push(popStash(interpreterContext))
   },
 
   ExpressionStatement: (cmd: Command, interpreterContext: InterpreterContext) => {
@@ -327,13 +342,10 @@ const microcode = {
 
     const args: any[] = []
     for (let i = arity - 1; i >= 0; i--) {
-      args[i] = popStash(stash, memory)
+      args[i] = popStash(interpreterContext)
     }
 
-    const closureIndexAddress = popStash(stash, memory, true)
-    const closureNan = memory.getIndexFromAddress(closureIndexAddress)
-    const closurePoolIndex = memory.getClosurePoolIndex(closureNan)
-    const func = closurePool[closurePoolIndex]
+    const func = popStash(interpreterContext)
     const params = scanParameters(func.prms)
     interpreterContext.variableLookupEnv = extendVariableLookupEnv(params, variableLookupEnv)
     const frameAddress = memory.allocateFrame(params.length)
@@ -379,9 +391,9 @@ const microcode = {
   },
 
   AssignmentInstruction: (cmd: Command, interpreterContext: InterpreterContext) => {
-    const { stash, memory } = interpreterContext
-    const leftAddress = popStash(stash, memory, false)
-    const rightExpr = peekStash(stash, memory)
+    const { memory } = interpreterContext
+    const leftAddress = popStash(interpreterContext, false)
+    let rightExpr = peekStash(interpreterContext)
     memory.setValueAtAddress(leftAddress, rightExpr)
   },
 
@@ -430,7 +442,7 @@ const microcode = {
     const { agenda, stash, memory } = interpreterContext
 
     const { cons, alt } = cmd as BranchInstruction
-    if (isTrue(popStash(stash, memory))) {
+    if (isTrue(popStash(interpreterContext))) {
       agenda.push(cons)
     } else if (alt) {
       agenda.push(alt)
@@ -450,8 +462,8 @@ const microcode = {
     const { stash, memory } = interpreterContext
 
     const { sym } = cmd as BinaryOpInstruction
-    const rightOperand = popStash(stash, memory)
-    const leftOperand = popStash(stash, memory)
+    const rightOperand = popStash(interpreterContext)
+    const leftOperand = popStash(interpreterContext)
     stash.push(applyBinaryOp(sym, leftOperand, rightOperand))
   },
 
@@ -485,7 +497,7 @@ const microcode = {
   WhileInstruction: (cmd: Command, interpreterContext: InterpreterContext) => {
     const { agenda, stash, memory } = interpreterContext
     const { pred, body } = cmd as WhileInstruction
-    if (isTrue(popStash(stash, memory))) {
+    if (isTrue(popStash(interpreterContext))) {
       agenda.push(cmd, pred, body)
     }
   },
@@ -532,7 +544,7 @@ const microcode = {
 
   Pop: (cmd: Command, interpreterContext: InterpreterContext) => {
     const { stash, memory } = interpreterContext
-    popStash(stash, memory)
+    popStash(interpreterContext)
   }
 }
 
@@ -560,15 +572,13 @@ function runInterpreter(context: Context, interpreterContext: InterpreterContext
     if (!microcode.hasOwnProperty(cmd.tag))
       throw new Error('internal error: unknown command ' + cmd.tag)
     microcode[cmd.tag](cmd, interpreterContext)
-    console.log(cmd)
-    console.log(stash)
     i++
   }
 
   if (i === step_limit) throw new Error('step limit ' + step_limit + ' exceeded')
   if (stash.length > 1 || stash.length < 1)
     throw new Error('internal error: stash must be singleton')
-  return popStash(stash, memory)
+  return popStash(interpreterContext)
 }
 
 export function* evaluate(node: Node, context: Context) {

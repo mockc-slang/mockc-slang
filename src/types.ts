@@ -407,11 +407,16 @@ export type Instruction =
   | ApplicationInstruction
   | WhileInstruction
   | LoadAddressInstruction
+  | DerefStashValueInstruction
 
 export type DeclarationExpression = {
   tag: 'DeclarationExpression'
   identifier: string
   expr: Command
+}
+
+export type DerefStashValueInstruction = {
+  tag: 'DerefStashValueInstruction'
 }
 
 export type LoadAddressInstruction = {
