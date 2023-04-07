@@ -393,7 +393,7 @@ const microcode = {
   AssignmentInstruction: (cmd: Command, interpreterContext: InterpreterContext) => {
     const { memory } = interpreterContext
     const leftAddress = popStash(interpreterContext, false)
-    let rightExpr = peekStash(interpreterContext)
+    const rightExpr = peekStash(interpreterContext)
     memory.setValueAtAddress(leftAddress, rightExpr)
   },
 
