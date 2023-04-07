@@ -491,7 +491,7 @@ const microcode = {
     const { agenda } = interpreterContext
     const { exprs } = cmd as ExpressionStatementNode
     const orderedExprs = exprs.slice().reverse()
-    agenda.push(...orderedExprs)
+    agenda.push(popInstruction, ...orderedExprs)
   },
 
   FunctionApplication: (cmd: Command, interpreterContext: InterpreterContext) => {
