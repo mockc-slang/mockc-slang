@@ -47,17 +47,17 @@ type TypeFrame = {
 }
 type TypeEnvironment = TypeFrame[]
 
-function toString(type: TypeAssignment): string {
+const toString = (type: TypeAssignment): string => {
   if (!type) return 'undefined'
   if (type.tag == 'Variable') return type.type
   const { parameterTypes, returnType } = type
   return `(${parameterTypes.map(paramType => toString(paramType))}) => ${toString(returnType)}`
 }
 
-function getVariableType(
+const getVariableType = (
   typeString: string,
   pointer: PointerNode | undefined
-): VariableTypeAssignment {
+): VariableTypeAssignment => {
   let type = typeString
   while (pointer) {
     type += '*'
@@ -91,7 +91,7 @@ function getVariableType(
   }
 }
 
-function isSameType(a: TypeAssignment, b: TypeAssignment): boolean {
+const isSameType = (a: TypeAssignment, b: TypeAssignment): boolean => {
   if (!a || !b) return false
   if (a.tag == 'Variable' && b.tag == 'Variable') {
     return a.type == b.type
@@ -112,15 +112,21 @@ function isSameType(a: TypeAssignment, b: TypeAssignment): boolean {
   return false
 }
 
-function extendEnvironment(E: TypeEnvironment, tag: string) {
+const isPointer = (a: TypeAssignment): boolean => {
+  if (!a) return false
+  if (a.tag == 'Closure') return false
+  return a.type.includes('*')
+}
+
+const extendEnvironment = (E: TypeEnvironment, tag: string) => {
   E.push({ tag, assignments: {} })
 }
 
-function exitEnvironment(E: TypeEnvironment) {
+const exitEnvironment = (E: TypeEnvironment) => {
   E.pop()
 }
 
-function isInsideLoop(E: TypeEnvironment) {
+const isInsideLoop = (E: TypeEnvironment) => {
   for (let i = E.length - 1; i >= 0; i--) {
     if (E[i].tag == 'loop') {
       return true
@@ -129,11 +135,11 @@ function isInsideLoop(E: TypeEnvironment) {
   return false
 }
 
-function assignIdentifierType(identifier: string, type: TypeAssignment, E: TypeEnvironment) {
+const assignIdentifierType = (identifier: string, type: TypeAssignment, E: TypeEnvironment) => {
   E[E.length - 1].assignments[identifier] = type
 }
 
-function checkIdentifierType(identifier: string, E: TypeEnvironment): IdentifierTypeAssignment {
+const checkIdentifierType = (identifier: string, E: TypeEnvironment): IdentifierTypeAssignment => {
   for (let i = E.length - 1; i >= 0; i--) {
     const type = E[i].assignments[identifier]
     if (!type) {
@@ -156,34 +162,60 @@ function checkIdentifierType(identifier: string, E: TypeEnvironment): Identifier
   )
 }
 
-function checkSymType(
+const checkSymType = (
   sym: string,
   leftExprType: TypeAssignment,
   rightExprType: TypeAssignment
-): TypeAssignment {
+): TypeAssignment => {
   switch (sym) {
     case '+':
     case '-':
+      if (isSameType(leftExprType, INT_TYPE) && isSameType(rightExprType, INT_TYPE)) {
+        return INT_TYPE
+      }
+      if (
+        (isSameType(leftExprType, INT_TYPE) || isSameType(rightExprType, INT_TYPE)) &&
+        (isPointer(leftExprType) || isPointer(rightExprType))
+      ) {
+        return isPointer(leftExprType) ? leftExprType : rightExprType
+      }
+      throw new FatalTypeError(
+        {
+          start: {
+            line: 0,
+            column: 0
+          },
+          end: {
+            line: 0,
+            column: 0
+          }
+        },
+        `Binary operator'${sym}' cannot be applied on '${toString(leftExprType)}' and '${toString(
+          rightExprType
+        )}'`
+      )
     case '==':
     case '!=':
-      if (!isSameType(leftExprType, INT_TYPE) || !isSameType(rightExprType, INT_TYPE)) {
-        throw new FatalTypeError(
-          {
-            start: {
-              line: 0,
-              column: 0
-            },
-            end: {
-              line: 0,
-              column: 0
-            }
+      if (
+        isSameType(leftExprType, rightExprType) &&
+        (isSameType(leftExprType, INT_TYPE) || isPointer(leftExprType))
+      )
+        return INT_TYPE
+      throw new FatalTypeError(
+        {
+          start: {
+            line: 0,
+            column: 0
           },
-          `'${sym}' operator must be applied on 'int' 'int': instead found '${toString(
-            leftExprType
-          )}' and '${toString(rightExprType)}'`
-        )
-      }
-      return INT_TYPE
+          end: {
+            line: 0,
+            column: 0
+          }
+        },
+        `Binary operator'${sym}' cannot be applied on '${toString(leftExprType)}' and '${toString(
+          rightExprType
+        )}'`
+      )
     default:
       throw new FatalTypeError(
         {
@@ -201,7 +233,7 @@ function checkSymType(
   }
 }
 
-function check(node: Node | undefined, E: TypeEnvironment): TypeAssignment {
+const check = (node: Node | undefined, E: TypeEnvironment): TypeAssignment => {
   if (!node) {
     return
   }
