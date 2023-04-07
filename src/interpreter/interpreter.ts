@@ -711,6 +711,14 @@ const microcode = {
   }
 }
 
+function debugPrint(str: string, ctx: Context): void {
+  if (ctx.externalBuiltIns?.rawDisplay) {
+    ctx.externalBuiltIns.rawDisplay('', str, ctx)
+  } else {
+    console.log(str)
+  }
+}
+
 function runInterpreter(context: Context, interpreterContext: InterpreterContext) {
   context.runtime.break = false
 
@@ -751,6 +759,8 @@ export function* evaluate(node: Node, context: Context) {
       variableLookupEnv: [], // TODO: add primitives / builtins here
       closurePool: []
     }
+
+    // debugPrint('test if this shows', context)
 
     interpreterContext.env = interpreterContext.memory.createGlobalEnvironment()
 
