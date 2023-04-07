@@ -1,7 +1,7 @@
 import * as es from 'estree'
 
-import { ErrorSeverity, ErrorType, Node, PointerNode, SourceError } from '../types'
 import { builtinObject } from '../stdlib/builtin'
+import { ErrorSeverity, ErrorType, Node, PointerNode, SourceError } from '../types'
 
 export class FatalTypeError implements SourceError {
   public type = ErrorType.SYNTAX

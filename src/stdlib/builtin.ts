@@ -1,4 +1,4 @@
-import { InterpreterContext, derefStashVal, popStash } from '../interpreter/interpreterContext'
+import { derefStashVal, InterpreterContext, popStash } from '../interpreter/interpreterContext'
 
 export const builtinObject = {
   printf: {
