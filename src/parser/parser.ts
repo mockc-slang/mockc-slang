@@ -85,7 +85,8 @@ import {
   SourceError,
   StatementNode,
   TranslationUnitNode,
-  TypeSpecifierNode
+  TypeSpecifierNode,
+  UnaryExpressionNode
 } from '../types'
 
 // export class DisallowedConstructError implements SourceError {
@@ -385,6 +386,15 @@ class NodeGenerator implements MockCVisitor<Node> {
 
   visitUnaryExpression(ctx: UnaryExpressionContext): ExpressionNode {
     // TODO: Check for unary expression
+    const unaryOperator = ctx.unaryOperator()
+    const castExpression = ctx.castExpression()?.accept(this) as ExpressionNode | undefined
+    if (unaryOperator && castExpression) {
+      return {
+        tag: 'UnaryExpression',
+        sym: unaryOperator.text,
+        expr: castExpression
+      }
+    }
     return ctx.postfixExpression()?.accept(this) as ExpressionNode
   }
 
@@ -478,18 +488,15 @@ class NodeGenerator implements MockCVisitor<Node> {
   }
 
   visitAssignmentExpression(ctx: AssignmentExpressionContext): ExpressionNode {
-    const unaryExpression = ctx.unaryExpression()
-    const assignmentOperator = ctx.assignmentOperator()
-    const assignmentExpression = ctx.assignmentExpression()
-    if (unaryExpression && assignmentOperator && assignmentExpression) {
-      const { val: identifier } = unaryExpression.accept(this) as IdentifierNode
-      const sym = assignmentOperator.text
-      const expr = assignmentExpression.accept(this) as ExpressionNode
+    const leftExpr = ctx.unaryExpression()?.accept(this) as ExpressionNode
+    const sym = ctx.assignmentOperator()?.text
+    const rightExpr = ctx.assignmentExpression()?.accept(this) as ExpressionNode
+    if (leftExpr && sym && rightExpr) {
       return {
         tag: 'AssignmentExpression',
-        identifier,
+        leftExpr,
         sym,
-        expr
+        rightExpr
       }
     }
     return ctx.conditionalExpression()?.accept(this) as ExpressionNode
@@ -681,7 +688,7 @@ export function parse(source: string, context: Context) {
     try {
       const tree = parser.compilationUnit()
       program = convertSource(tree)
-      // console.log(JSON.stringify(program, undefined, 2), 'final tree')
+      console.log(JSON.stringify(program, undefined, 2), 'final tree')
       checkTyping(program)
     } catch (error) {
       if (error instanceof FatalSyntaxError || error instanceof FatalTypeError) {

@@ -467,6 +467,24 @@ export class Memory {
     )
   }
 
+  getEnvironmentAddress(envAddress: number, position: number[]) {
+    const [frameIndex, valueIndex] = position
+    const frameAddress = this.getWordAtIndex(
+      this.getIndexFromAddress(envAddress) + Memory.EnvironmentFramesOffset + frameIndex
+    )
+    return this.makeAddress(
+      this.getIndexFromAddress(frameAddress) + Memory.FrameValuesOffset + valueIndex
+    )
+  }
+
+  setValueAtAddress(address: number, value: number) {
+    return this.setWordAtIndex(this.getIndexFromAddress(address), value)
+  }
+
+  copyValue(fromAddress: number, toAddress: number) {
+    return this.setValueAtAddress(toAddress, this.addressDeref(fromAddress))
+  }
+
   // extend a given environment by a new frame:
   // create a new environment that is bigger by 1
   // frame slot than the given environment.

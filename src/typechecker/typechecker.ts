@@ -145,7 +145,7 @@ const checkIdentifierType = (identifier: string, E: TypeEnvironment): Identifier
     if (!type) {
       continue
     }
-    return type
+    return JSON.parse(JSON.stringify(type))
   }
   throw new FatalTypeError(
     {
@@ -168,6 +168,25 @@ const checkSymType = (
   rightExprType: TypeAssignment
 ): TypeAssignment => {
   switch (sym) {
+    case '=':
+      if (!isSameType(leftExprType, rightExprType)) {
+        throw new FatalTypeError(
+          {
+            start: {
+              line: 0,
+              column: 0
+            },
+            end: {
+              line: 0,
+              column: 0
+            }
+          },
+          `Assignment type mismatch: '${toString(rightExprType)}' assigned to '${toString(
+            leftExprType
+          )}'`
+        )
+      }
+      return leftExprType
     case '+':
     case '-':
       if (isSameType(leftExprType, INT_TYPE) && isSameType(rightExprType, INT_TYPE)) {
@@ -293,32 +312,10 @@ const check = (node: Node | undefined, E: TypeEnvironment): TypeAssignment => {
   }
 
   if (tag == 'AssignmentExpression') {
-    const { identifier, sym, expr } = node
-    const identifierType = checkIdentifierType(identifier, E)
-    const exprType = check(expr, E)
-
-    if (sym == '=') {
-      if (!isSameType(identifierType, exprType)) {
-        throw new FatalTypeError(
-          {
-            start: {
-              line: 0,
-              column: 0
-            },
-            end: {
-              line: 0,
-              column: 0
-            }
-          },
-          `Assignment type mismatch: '${toString(exprType)}' assigned to '${toString(
-            identifierType
-          )}'`
-        )
-      }
-      return identifierType
-    }
-
-    return checkSymType(sym, identifierType, exprType)
+    const { leftExpr, sym, rightExpr } = node
+    const leftExprType = check(leftExpr, E)
+    const rightExprType = check(rightExpr, E)
+    return checkSymType(sym, leftExprType, rightExprType)
   }
 
   if (tag == 'ConditionalExpression') {
@@ -585,6 +582,46 @@ const check = (node: Node | undefined, E: TypeEnvironment): TypeAssignment => {
       )
     }
     return
+  }
+
+  if (tag == 'UnaryExpression') {
+    const { sym, expr } = node
+    const exprType = check(expr, E)
+    if (!exprType) {
+      throw new FatalTypeError(
+        {
+          start: {
+            line: 0,
+            column: 0
+          },
+          end: {
+            line: 0,
+            column: 0
+          }
+        },
+        `Unary operator '${sym}' cannot be applied on 'undefined' type`
+      )
+    }
+
+    if (sym == '*') {
+      if (exprType.tag == 'Closure' || exprType.type[exprType.type.length - 1] != '*') {
+        throw new FatalTypeError(
+          {
+            start: {
+              line: 0,
+              column: 0
+            },
+            end: {
+              line: 0,
+              column: 0
+            }
+          },
+          `Unary operator '${sym}' must be used on pointer type`
+        )
+      }
+      exprType.type = exprType.type.substring(0, exprType.type.length - 1)
+      return exprType
+    }
   }
 
   if (tag == 'ReturnStatement') {
