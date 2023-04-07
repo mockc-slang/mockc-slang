@@ -80,6 +80,7 @@ import {
   Node,
   ParameterDeclarationNode,
   ParameterListNode,
+  PointerNode,
   SelectionStatementNode,
   SourceError,
   StatementNode,
@@ -258,11 +259,17 @@ class NodeGenerator implements MockCVisitor<Node> {
   visitDeclarator(ctx: DeclaratorContext): DeclaratorNode {
     return {
       tag: 'Declarator',
-      directDeclarator: ctx.directDeclarator().accept(this) as DirectDeclaratorNode
+      directDeclarator: ctx.directDeclarator().accept(this) as DirectDeclaratorNode,
+      pointer: ctx.pointer()?.accept(this) as PointerNode | undefined
     }
   }
 
-  visitPointer?: ((ctx: PointerContext) => Node) | undefined
+  visitPointer(ctx: PointerContext): PointerNode {
+    return {
+      tag: 'Pointer',
+      pointer: ctx.pointer()?.accept(this) as PointerNode | undefined
+    }
+  }
 
   visitDirectDeclarator(ctx: DirectDeclaratorContext): DirectDeclaratorNode {
     const parameterList = (ctx.parameterList()?.accept(this) as ParameterListNode) || {
@@ -516,11 +523,11 @@ class NodeGenerator implements MockCVisitor<Node> {
   }
 
   visitDeclaration(ctx: DeclarationContext): DeclarationNode {
-    const { identifier, initializer } = ctx.initDeclarator().accept(this) as InitDeclaratorNode
+    const { declarator, initializer } = ctx.initDeclarator().accept(this) as InitDeclaratorNode
     return {
       tag: 'Declaration',
       type: ctx.typeSpecifier().text,
-      identifier,
+      declarator,
       initializer
     }
   }
@@ -528,7 +535,7 @@ class NodeGenerator implements MockCVisitor<Node> {
   visitInitDeclarator(ctx: InitDeclaratorContext): InitDeclaratorNode {
     return {
       tag: 'InitDeclarator',
-      identifier: ctx.declarator().directDeclarator().IDENTIFIER().text,
+      declarator: ctx.declarator().accept(this) as DeclaratorNode,
       initializer: ctx.initializer()?.accept(this) as InitializerNode
     }
   }

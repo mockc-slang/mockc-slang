@@ -1,6 +1,6 @@
 import * as es from 'estree'
 
-import { ErrorSeverity, ErrorType, Node, SourceError } from '../types'
+import { ErrorSeverity, ErrorType, Node, PointerNode, SourceError } from '../types'
 
 export class FatalTypeError implements SourceError {
   public type = ErrorType.SYNTAX
@@ -54,14 +54,21 @@ function toString(type: TypeAssignment): string {
   return `(${parameterTypes.map(paramType => toString(paramType))}) => ${toString(returnType)}`
 }
 
-function getVariableTypeFromString(type: string): VariableTypeAssignment {
-  switch (type) {
+function getVariableType(
+  typeString: string,
+  pointer: PointerNode | undefined
+): VariableTypeAssignment {
+  let type = typeString
+  while (pointer) {
+    type += '*'
+    pointer = pointer.pointer
+  }
+
+  switch (typeString) {
     case 'int':
-      return INT_TYPE
-    case 'char':
-      return CHAR_TYPE
+      break
     case 'void':
-      return VOID_TYPE
+      if (!pointer) break
     default:
       throw new FatalTypeError(
         {
@@ -76,6 +83,11 @@ function getVariableTypeFromString(type: string): VariableTypeAssignment {
         },
         `Unknown type ${type}`
       )
+  }
+
+  return {
+    tag: 'Variable',
+    type
   }
 }
 
@@ -212,8 +224,15 @@ function check(node: Node | undefined, E: TypeEnvironment): TypeAssignment {
   }
 
   if (tag == 'Declaration') {
-    const { type: typeString, identifier, initializer } = node
-    const declaredType = getVariableTypeFromString(typeString)
+    const {
+      type: typeString,
+      declarator: {
+        directDeclarator: { identifier },
+        pointer
+      },
+      initializer
+    } = node
+    const declaredType = getVariableType(typeString, pointer)
     const initializerType = check(initializer, E)
     if (initializerType && !isSameType(declaredType, initializerType)) {
       throw new FatalTypeError(
@@ -323,12 +342,15 @@ function check(node: Node | undefined, E: TypeEnvironment): TypeAssignment {
   }
 
   if (tag == 'FunctionDefinition') {
-    const { type, declarator, body } = node
+    const { type: typeString, declarator, body } = node
     const {
-      identifier,
-      parameterList: { parameters }
-    } = declarator.directDeclarator
-    const returnType = getVariableTypeFromString(type)
+      pointer,
+      directDeclarator: {
+        identifier,
+        parameterList: { parameters }
+      }
+    } = declarator
+    const returnType = getVariableType(typeString, pointer)
     const closureType: TypeAssignment = {
       tag: 'Closure',
       parameterTypes: [],
@@ -361,12 +383,13 @@ function check(node: Node | undefined, E: TypeEnvironment): TypeAssignment {
 
   if (tag == 'ParameterDeclaration') {
     const {
-      type,
+      type: typeString,
       declarator: {
-        directDeclarator: { identifier }
+        directDeclarator: { identifier },
+        pointer
       }
     } = node
-    const parameterType = getVariableTypeFromString(type)
+    const parameterType = getVariableType(typeString, pointer)
     assignIdentifierType(identifier, parameterType, E)
     return parameterType
   }
@@ -611,7 +634,7 @@ function check(node: Node | undefined, E: TypeEnvironment): TypeAssignment {
   )
 }
 
-export function checkTyping(program: Node) {
+export const checkTyping = (program: Node) => {
   const E: TypeEnvironment = [{ tag: 'block', assignments: {} }]
   check(program, E)
 }

@@ -486,6 +486,7 @@ export type Node =
   | InitDeclaratorNode
   | DeclaratorNode
   | DirectDeclaratorNode
+  | PointerNode
   | InitializerNode
   | ExpressionNode
   | StatementNode
@@ -540,7 +541,7 @@ export type FunctionDefinitionNode = {
 export type DeclarationNode = {
   tag: 'Declaration'
   type: string
-  identifier: string
+  declarator: DeclaratorNode
   initializer?: InitializerNode
 }
 
@@ -551,7 +552,7 @@ export type TypeSpecifierNode = {
 
 export type InitDeclaratorNode = {
   tag: 'InitDeclarator'
-  identifier: string
+  declarator: DeclaratorNode
   initializer?: InitializerNode
 }
 
@@ -594,12 +595,18 @@ export type ReturnStatementNode = {
 export type DeclaratorNode = {
   tag: 'Declarator'
   directDeclarator: DirectDeclaratorNode
+  pointer?: PointerNode
 }
 
 export type DirectDeclaratorNode = {
   tag: 'DirectDeclarator'
   identifier: string
   parameterList: ParameterListNode
+}
+
+export type PointerNode = {
+  tag: 'Pointer'
+  pointer?: PointerNode
 }
 
 export type ParameterListNode = {

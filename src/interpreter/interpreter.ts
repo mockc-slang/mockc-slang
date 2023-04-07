@@ -260,15 +260,15 @@ const scanDeclarations = (cmds: Command[]): string[] => {
     if (cmd.tag == 'ExternalDeclaration') {
       const { declaration, functionDefinition } = cmd as ExternalDeclarationNode
       if (declaration) {
-        locals.push(declaration.identifier)
+        locals.push(declaration.declarator.directDeclarator.identifier)
       }
       if (functionDefinition) {
         locals.push(functionDefinition.declarator.directDeclarator.identifier)
       }
     }
     if (cmd.tag == 'Declaration') {
-      const { identifier } = cmd as DeclarationNode
-      locals.push(identifier)
+      const { declarator } = cmd as DeclarationNode
+      locals.push(declarator.directDeclarator.identifier)
     }
   })
   return locals
@@ -424,7 +424,12 @@ const microcode = {
   Declaration: (cmd: Command, interpreterContext: InterpreterContext) => {
     const { agenda } = interpreterContext
 
-    const { identifier, initializer } = cmd as DeclarationNode
+    const {
+      declarator: {
+        directDeclarator: { identifier }
+      },
+      initializer
+    } = cmd as DeclarationNode
     if (!initializer) {
       // TODO: handle identifier only situation
       return
