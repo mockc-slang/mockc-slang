@@ -38,6 +38,7 @@ import {
   ReturnStatementNode,
   SelectionStatementNode,
   TranslationUnitNode,
+  UnaryExpressionNode,
   Value,
   WhileInstruction,
   WhileStatementNode
@@ -116,7 +117,7 @@ const popInstruction: PopInstruction = { tag: 'Pop' }
 const markInstruction: MarkInstruction = { tag: 'MarkInstruction' }
 const resetInstruction: ResetInstruction = { tag: 'ResetInstruction' }
 const assignmentInstruction: AssignmentInstruction = { tag: 'AssignmentInstruction' }
-const derefStackValueInstruction: DerefStashValueInstruction = { tag: 'DerefStashValueInstruction' }
+const derefStashValueInstruction: DerefStashValueInstruction = { tag: 'DerefStashValueInstruction' }
 
 const createEnvironmentRestoreInstruction = (
   env: number,
@@ -299,7 +300,7 @@ const microcode = {
     const { exprs } = (cmd as ReturnStatementNode).exprs
     agenda.push(resetInstruction)
     if (exprs.length > 0) {
-      agenda.push(derefStackValueInstruction)
+      agenda.push(derefStashValueInstruction)
     }
     const orderedExprs = exprs.slice().reverse()
     agenda.push(...orderedExprs)
@@ -479,6 +480,14 @@ const microcode = {
     expressionListCmds.pop()
     expressionListCmds.reverse()
     agenda.push(...expressionListCmds)
+  },
+
+  UnaryExpression: (cmd: Command, interpreterContext: InterpreterContext) => {
+    const { agenda } = interpreterContext
+    const { sym, expr } = cmd as UnaryExpressionNode
+    if (sym == '*') {
+      agenda.push(derefStashValueInstruction, expr)
+    }
   },
 
   WhileStatement: (cmd: Command, interpreterContext: InterpreterContext) => {
