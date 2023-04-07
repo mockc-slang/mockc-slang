@@ -321,7 +321,7 @@ const microcode = {
   ExpressionStatement: (cmd: Command, interpreterContext: InterpreterContext) => {
     const { agenda } = interpreterContext
     const { exprs } = cmd as ExpressionStatementNode
-    agenda.push(exprs)
+    agenda.push(popInstruction, exprs)
   },
 
   FunctionApplication: (cmd: Command, interpreterContext: InterpreterContext) => {
