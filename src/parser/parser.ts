@@ -599,7 +599,10 @@ class NodeGenerator implements MockCVisitor<Node> {
 
     return {
       tag: 'ExpressionStatement',
-      exprs: expressionList?.exprs || []
+      exprs: expressionList || {
+        tag: 'ExpressionList',
+        exprs: []
+      }
     }
   }
 

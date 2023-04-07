@@ -568,7 +568,7 @@ export type CompoundStatementNode = {
 
 export type ExpressionStatementNode = {
   tag: 'ExpressionStatement'
-  exprs: ExpressionNode[]
+  exprs: ExpressionListNode
 }
 
 export type SelectionStatementNode = {

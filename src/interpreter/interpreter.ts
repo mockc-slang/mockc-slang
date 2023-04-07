@@ -297,13 +297,12 @@ const microcode = {
 
   ReturnStatement: (cmd: Command, interpreterContext: InterpreterContext) => {
     const { agenda } = interpreterContext
-    const { exprs } = (cmd as ReturnStatementNode).exprs
+    const { exprs } = cmd as ReturnStatementNode
     agenda.push(resetInstruction)
-    if (exprs.length > 0) {
+    if (exprs.exprs.length > 0) {
       agenda.push(derefStashValueInstruction)
     }
-    const orderedExprs = exprs.slice().reverse()
-    agenda.push(...orderedExprs)
+    agenda.push(exprs)
   },
 
   ResetInstruction: (cmd: Command, interpreterContext: InterpreterContext) => {
@@ -322,8 +321,7 @@ const microcode = {
   ExpressionStatement: (cmd: Command, interpreterContext: InterpreterContext) => {
     const { agenda } = interpreterContext
     const { exprs } = cmd as ExpressionStatementNode
-    const orderedExprs = exprs.slice().reverse()
-    agenda.push(popInstruction, ...orderedExprs)
+    agenda.push(exprs)
   },
 
   FunctionApplication: (cmd: Command, interpreterContext: InterpreterContext) => {
@@ -338,7 +336,7 @@ const microcode = {
   },
 
   ApplicationInstruction: (cmd: Command, interpreterContext: InterpreterContext) => {
-    const { stash, env, agenda, variableLookupEnv, memory, closurePool } = interpreterContext
+    const { env, agenda, variableLookupEnv, memory } = interpreterContext
     const { arity } = cmd as ApplicationInstruction
 
     const args: any[] = []
@@ -552,7 +550,6 @@ const microcode = {
   },
 
   Pop: (cmd: Command, interpreterContext: InterpreterContext) => {
-    const { stash, memory } = interpreterContext
     popStash(interpreterContext)
   }
 }

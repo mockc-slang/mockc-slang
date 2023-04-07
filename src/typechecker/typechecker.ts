@@ -425,7 +425,7 @@ const check = (node: Node | undefined, E: TypeEnvironment): TypeAssignment => {
 
   if (tag == 'ExpressionStatement') {
     const { exprs } = node
-    exprs.forEach(expr => check(expr, E))
+    check(exprs, E)
     return
   }
 
