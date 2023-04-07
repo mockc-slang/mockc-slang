@@ -13,5 +13,21 @@ export const builtinObject = {
         return context.externalBuiltIns.rawDisplay('', memory.wordToCValue(derefVal), context)
       }
     }
+  },
+  printMemory: {
+    arity: 0,
+    func: (interpreterContext: InterpreterContext) => {
+      const { memory, context } = interpreterContext
+      const str = memory.displayMemoryLayout()
+      return context.externalBuiltIns.rawDisplay('', str, context)
+    }
+  },
+  printCurrentEnvironment: {
+    arity: 0,
+    func: (interpreterContext: InterpreterContext) => {
+      const { memory, context, env } = interpreterContext
+      const str = memory.displayEnvironment(env)
+      return context.externalBuiltIns.rawDisplay('', str, context)
+    }
   }
 }
