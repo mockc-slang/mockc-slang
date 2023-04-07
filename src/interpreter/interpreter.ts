@@ -74,9 +74,10 @@ const setUpInterpreterContext = (context: Context, node: any): InterpreterContex
         const { context, memory, stash } = interpreterContext
         const val = popStash(interpreterContext, false)
         if (typeof val === 'string') {
-          context.externalBuiltIns.rawDisplay('', val, context)
+          return context.externalBuiltIns.rawDisplay('', val, context)
         } else {
-          context.externalBuiltIns.rawDisplay('', memory.wordToCValue(val), context)
+          const derefVal = derefStashVal(val, interpreterContext)
+          return context.externalBuiltIns.rawDisplay('', memory.wordToCValue(derefVal), context)
         }
       }
     }
@@ -104,7 +105,7 @@ const setUpInterpreterContext = (context: Context, node: any): InterpreterContex
     stash: [],
     memory: memory,
     env: globalEnv,
-    variableLookupEnv: [builtinArray], // TODO: add primitives / builtins here
+    variableLookupEnv: [builtinArray],
     closurePool: [],
     context,
     builtinEnv
@@ -120,7 +121,7 @@ const applyBuiltin = (builtinId: number, interpreterContext: InterpreterContext)
   const func = builtinObject[funcName].func
   const result = func(interpreterContext)
   popStash(interpreterContext, false)
-  if (result != undefined) stash.push(result)
+  stash.push(result)
 }
 
 const isTrue = (val: any) => {

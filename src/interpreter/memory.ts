@@ -200,7 +200,7 @@ export class Memory {
   isNull(x: number) {
     return this.checkTag(x, Memory.NullTag)
   }
-  // TODO: check if this is necessary when handling declarator-only situation
+
   Unassigned = this.makeTaggedNaN(Memory.UnassignedTag)
   isUnassigned(x: number) {
     return this.checkTag(x, Memory.UnassignedTag)
@@ -427,7 +427,6 @@ export class Memory {
   }
 
   createGlobalEnvironment() {
-    // TODO: add builtin functions here, by extending one more frame
     return this.allocateEnvironment(0)
   }
 
