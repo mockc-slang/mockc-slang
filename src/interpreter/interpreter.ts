@@ -37,21 +37,30 @@ import {
   ResetInstruction,
   ReturnStatementNode,
   SelectionStatementNode,
+  StringLiteralNode,
   TranslationUnitNode,
   UnaryExpressionNode,
   Value,
   WhileInstruction,
   WhileStatementNode
 } from '../types'
-import { Memory } from './memory'
+import {
+  InterpreterContext,
+  peekAgenda,
+  peekStash,
+  popAgenda,
+  popStash,
+  setUpInterpreterContext
+} from './interpreterContext'
 
-type InterpreterContext = {
-  agenda: Command[]
-  stash: Value[]
-  memory: Memory
-  env: number
-  variableLookupEnv: string[][]
-  closurePool: ClosureExpression[]
+const applyBuiltin = (builtinId: number, interpreterContext: InterpreterContext) => {
+  const { builtinEnv, stash } = interpreterContext
+  const { builtinArray, builtinObject } = builtinEnv
+  const funcName = builtinArray[builtinId]
+  const func = builtinObject[funcName].func
+  const result = func(interpreterContext)
+  popStash(interpreterContext, false)
+  stash.push(result)
 }
 
 const isTrue = (val: any) => {
@@ -138,47 +147,6 @@ const binaryOpMicrocode = {
   '-': (x: number, y: number) => x - y,
   '==': (x: number, y: number) => (x == y ? 1 : 0),
   '!=': (x: number, y: number) => (x != y ? 1 : 0)
-}
-
-const derefStashVal = (val: any, interpreterContext: InterpreterContext) => {
-  const { memory, closurePool } = interpreterContext
-  if (!memory.isAddress(val)) {
-    return val
-  }
-  const payload = memory.addressDeref(val)
-  return memory.isClosure(payload) ? closurePool[memory.getClosurePoolIndex(payload)] : payload
-}
-
-const popStash = (interpreterContext: InterpreterContext, deref: boolean = true) => {
-  const { stash } = interpreterContext
-  const val = stash.pop()
-  if (val == undefined) {
-    throw Error('internal error: expected value from stash')
-  }
-  if (!deref) {
-    return val
-  }
-  return derefStashVal(val, interpreterContext)
-}
-
-const peekStash = (interpreterContext: InterpreterContext, deref: boolean = true) => {
-  const { stash } = interpreterContext
-  if (stash.length == 0) {
-    throw Error('internal error: expected value from stash')
-  }
-  const val = stash[stash.length - 1]
-  if (!deref) {
-    return val
-  }
-  return derefStashVal(val, interpreterContext)
-}
-
-const popAgenda = (agenda: Command[]) => {
-  const val = agenda.pop()
-  if (val == undefined) {
-    throw Error('internal error: expected value from agenda')
-  }
-  return val
 }
 
 const microcode = {
@@ -339,13 +307,18 @@ const microcode = {
     const { env, agenda, variableLookupEnv, memory } = interpreterContext
     const { arity } = cmd as ApplicationInstruction
 
+    const func = peekStash(interpreterContext, true, arity)
+    if (memory.isBuiltin(func)) {
+      return applyBuiltin(memory.getIdFromBuiltin(func), interpreterContext)
+    }
+
     const args: any[] = []
     for (let i = arity - 1; i >= 0; i--) {
       args[i] = popStash(interpreterContext)
     }
 
-    const func = popStash(interpreterContext)
-    const params = scanParameters(func.prms)
+    const closure = popStash(interpreterContext) as ClosureExpression
+    const params = scanParameters(closure.prms)
     interpreterContext.variableLookupEnv = extendVariableLookupEnv(params, variableLookupEnv)
     const frameAddress = memory.allocateFrame(params.length)
     interpreterContext.env = memory.environmentExtend(frameAddress, env)
@@ -353,11 +326,9 @@ const microcode = {
       memory.setFrameValue(frameAddress, i, args[i])
     }
 
-    // TODO: implement builtin here
-    // if (func.tag == 'builtin') { }
     if (
       agenda.length == 0 ||
-      (agenda[agenda.length - 1] as Command).tag == 'EnvironmentRestoreInstruction'
+      (peekAgenda(agenda) as Command).tag == 'EnvironmentRestoreInstruction'
     ) {
       agenda.push(markInstruction)
     } else {
@@ -549,17 +520,20 @@ const microcode = {
     stash.push(val)
   },
 
+  StringLiteral: (cmd: Command, interpreterContext: InterpreterContext) => {
+    // implemented only for more verbose printf
+    const { stash } = interpreterContext
+    const { val } = cmd as StringLiteralNode
+    stash.push(val)
+  },
+
   Pop: (cmd: Command, interpreterContext: InterpreterContext) => {
     popStash(interpreterContext)
   }
 }
 
 function debugPrint(str: string, ctx: Context): void {
-  if (ctx.externalBuiltIns?.rawDisplay) {
-    ctx.externalBuiltIns.rawDisplay('', str, ctx)
-  } else {
-    console.log(str)
-  }
+  ctx.externalBuiltIns.rawDisplay('', str, ctx)
 }
 
 function runInterpreter(context: Context, interpreterContext: InterpreterContext) {
@@ -568,8 +542,6 @@ function runInterpreter(context: Context, interpreterContext: InterpreterContext
   const step_limit = 1000000
 
   const { stash, agenda, memory } = interpreterContext
-
-  interpreterContext.env = memory.createGlobalEnvironment()
 
   let i = 0
   while (i < step_limit) {
@@ -594,18 +566,7 @@ export function* evaluate(node: Node, context: Context) {
   try {
     context.runtime.isRunning = true
 
-    const interpreterContext: InterpreterContext = {
-      agenda: [node],
-      stash: [],
-      memory: new Memory(10),
-      env: 0,
-      variableLookupEnv: [], // TODO: add primitives / builtins here
-      closurePool: []
-    }
-
-    // debugPrint('test if this shows', context)
-
-    interpreterContext.env = interpreterContext.memory.createGlobalEnvironment()
+    const interpreterContext = setUpInterpreterContext(context, node)
 
     return runInterpreter(context, interpreterContext)
   } catch (error) {

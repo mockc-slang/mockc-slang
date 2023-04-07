@@ -66,12 +66,12 @@ export class Memory {
       throw Error('Maximum size of memory should not exceed 2**12 megabytes')
     }
     const data = new ArrayBuffer(Memory.Mega * megaBytes)
-    this.stackLimit = (Memory.Mega * megaBytes) / 2
-    this.heapLimit = Memory.Mega * megaBytes
+    this.stackLimit = (Memory.Mega * megaBytes) / 2 / Memory.WordSize
+    this.heapLimit = (Memory.Mega * megaBytes) / Memory.WordSize
     this.view = new DataView(data)
     this.stackFree = 0
-    this.heapFree = (Memory.Mega * megaBytes) / 2
-    this.heapStartingPoint = (Memory.Mega * megaBytes) / 2
+    this.heapFree = (Memory.Mega * megaBytes) / 2 / Memory.WordSize
+    this.heapStartingPoint = this.heapFree
   }
 
   static testNanBoxing() {
@@ -105,18 +105,28 @@ export class Memory {
     return binStr
   }
 
-  display() {
-    console.log('Memory:')
-    this.displayMemoryLayout()
+  displayMemoryLayout() {
+    let outStr = ''
+    outStr += '\n==== Runtime Stack: ====\n\n'
+    for (let i = 0; i < this.stackFree; i++) {
+      outStr += this.displayMemoryWord(i)
+    }
+    outStr += '\n==== Heap: ====\n\n'
+    for (let i = this.heapStartingPoint; i < this.heapFree; i++) {
+      outStr += this.displayMemoryWord(i)
+    }
+    return outStr
   }
 
-  protected displayMemoryLayout() {
-    for (let i = 0; i < this.stackFree; i++) {
-      console.log(i, this.getWordAtIndex(i), Memory.wordToString(this.getWordAtIndex(i)))
-    }
-    for (let i = this.heapStartingPoint; i < this.heapFree; i++) {
-      console.log(i, this.getWordAtIndex(i), Memory.wordToString(this.getWordAtIndex(i)))
-    }
+  displayMemoryWord(i: number) {
+    return ''.concat(
+      i.toString(),
+      ' ',
+      this.getWordAtIndex(i).toString(),
+      ' ',
+      Memory.wordToString(this.getWordAtIndex(i)),
+      '\n'
+    )
   }
 
   getWordAtIndex(index: number) {
@@ -200,7 +210,7 @@ export class Memory {
   isNull(x: number) {
     return this.checkTag(x, Memory.NullTag)
   }
-  // TODO: check if this is necessary when handling declarator-only situation
+
   Unassigned = this.makeTaggedNaN(Memory.UnassignedTag)
   isUnassigned(x: number) {
     return this.checkTag(x, Memory.UnassignedTag)
@@ -274,7 +284,9 @@ export class Memory {
   }
 
   wordToCValue(x: number): string {
-    return this.isUndefined(x)
+    return isNaN(x)
+      ? Memory.wordToString(x)
+      : this.isUndefined(x)
       ? '<undefined>'
       : this.isUnassigned(x)
       ? '<unassigned>'
@@ -286,8 +298,6 @@ export class Memory {
       ? '<closure>'
       : this.isBuiltin(x)
       ? '<builtin>'
-      : String(isNaN(x))
-      ? Memory.wordToString(x)
       : String(x)
   }
 
@@ -399,15 +409,17 @@ export class Memory {
   }
 
   displayFrame(frameAddress: number) {
-    console.log('Frame:')
+    let outStr = ''
+    outStr += 'Frame: \n'
     const size = this.getFrameSize(frameAddress)
-    console.log('frame size:', size)
+    outStr += 'frame size: '.concat(size.toString(), '\n')
     for (let i = 0; i < size; i++) {
-      console.log('value index:', i)
+      outStr += 'value index: '.concat(i.toString(), '\n')
       const value = this.getFrameValue(frameAddress, i)
-      console.log('value:', value)
-      console.log('value word:', Memory.wordToString(value))
+      outStr += 'value: '.concat(value.toString(), '\n')
+      outStr += 'value word: '.concat(Memory.wordToString(value), '\n')
     }
+    return outStr
   }
 
   // environment
@@ -426,7 +438,6 @@ export class Memory {
   }
 
   createGlobalEnvironment() {
-    // TODO: add builtin functions here, by extending one more frame
     return this.allocateEnvironment(0)
   }
 
@@ -510,13 +521,15 @@ export class Memory {
 
   // for debuggging: display environment
   displayEnvironment(envAddress: number) {
+    let outStr = ''
     const size = this.getEnvironmentSize(envAddress)
-    console.log('Environment:')
-    console.log('environment size:', size)
+    outStr += '\n==== Environment: ===\n'
+    outStr += 'Environment size: '.concat(size.toString(), '\n')
     for (let i = 0; i < size; i++) {
-      console.log('frame index:', i)
+      outStr += '\n=== Frame Index: '.concat(i.toString(), ' ===\n')
       const frame = this.getEnvironmentFrame(envAddress, i)
-      this.displayFrame(frame)
+      outStr += this.displayFrame(frame)
     }
+    return outStr
   }
 }

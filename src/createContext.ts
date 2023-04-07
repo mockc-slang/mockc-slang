@@ -92,7 +92,7 @@ export const createEmptyContext = <T>(
   variant: Variant,
   externalSymbols: string[],
   externalContext?: T,
-  externalBuiltIns?: CustomBuiltIns
+  externalBuiltIns: CustomBuiltIns = defaultBuiltIns
 ): Context<T> => {
   return {
     externalSymbols,

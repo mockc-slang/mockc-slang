@@ -1,5 +1,6 @@
 import * as es from 'estree'
 
+import { builtinObject } from '../stdlib/builtin'
 import { ErrorSeverity, ErrorType, Node, PointerNode, SourceError } from '../types'
 
 export class FatalTypeError implements SourceError {
@@ -465,6 +466,10 @@ const check = (node: Node | undefined, E: TypeEnvironment): TypeAssignment => {
 
   if (tag == 'FunctionApplication') {
     const { identifier, params } = node
+    if (identifier in builtinObject) {
+      // TODO: add typechecking for builtin func
+      return
+    }
     const identifierType = checkIdentifierType(identifier, E)
     if (identifierType.tag == 'Variable') {
       throw new FatalTypeError(
