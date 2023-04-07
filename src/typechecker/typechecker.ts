@@ -244,6 +244,12 @@ const checkSymType = (
       )
     case '==':
     case '!=':
+    case '*':
+    case '%':
+    case '<':
+    case '>':
+    case '<=':
+    case '>=':
       if (
         isSameType(leftExprType, rightExprType) &&
         (isSameType(leftExprType, INT_TYPE) || isPointer(leftExprType))

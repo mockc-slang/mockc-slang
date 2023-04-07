@@ -166,8 +166,15 @@ const binaryOpMicrocode = {
     }
     return x - y
   },
+  '*': (x: number, y: number) => x * y,
+  '/': (x: number, y: number) => Math.floor(x / y),
+  '%': (x: number, y: number) => x % y,
   '==': (x: number, y: number) => (x == y ? 1 : 0),
-  '!=': (x: number, y: number) => (x != y ? 1 : 0)
+  '!=': (x: number, y: number) => (x != y ? 1 : 0),
+  '<': (x: number, y: number) => (x < y ? 1 : 0),
+  '>': (x: number, y: number) => (x > y ? 1 : 0),
+  '<=': (x: number, y: number) => (x == y ? 1 : 0),
+  '>=': (x: number, y: number) => (x <= y ? 1 : 0)
 }
 
 const microcode = {
