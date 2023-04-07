@@ -141,6 +141,13 @@ export interface Context<T = any> {
    * Code previously executed in this context
    */
   previousCode: string[]
+
+  /**
+   * External builtins.
+   * If defined, the user should call the appropriate method instead.
+   * E.g. display in web application
+   */
+  externalBuiltIns?: CustomBuiltIns
 }
 
 export type ModuleContext = {

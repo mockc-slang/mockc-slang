@@ -1,6 +1,7 @@
 // Variable determining chapter of Source is contained in this file.
 
-import { Context, Environment, Variant } from './types'
+import { Context, CustomBuiltIns, Environment, Variant } from './types'
+import * as misc from './stdlib/misc'
 
 export class LazyBuiltIn {
   func: (...arg0: any) => any
@@ -90,7 +91,8 @@ export const createGlobalEnvironment = (): Environment => ({
 export const createEmptyContext = <T>(
   variant: Variant,
   externalSymbols: string[],
-  externalContext?: T
+  externalContext?: T,
+  externalBuiltIns?: CustomBuiltIns
 ): Context<T> => {
   return {
     externalSymbols,
@@ -103,7 +105,8 @@ export const createEmptyContext = <T>(
     variant,
     moduleContexts: {},
     unTypecheckedCode: [],
-    previousCode: []
+    previousCode: [],
+    externalBuiltIns
   }
 }
 
@@ -124,12 +127,25 @@ export const ensureGlobalEnvironmentExist = (context: Context) => {
   }
 }
 
+const defaultBuiltIns: CustomBuiltIns = {
+  rawDisplay: misc.rawDisplay,
+  // See issue #5
+  prompt: misc.rawDisplay,
+  // See issue #11
+  alert: misc.rawDisplay,
+
+  visualiseList: (_v: any) => {
+    throw new Error('List visualizer is not enabled')
+  }
+}
+
 const createContext = <T>(
   variant: Variant = Variant.DEFAULT,
   externalSymbols: string[] = [],
-  externalContext?: T
+  externalContext?: T,
+  externalBuiltIns: CustomBuiltIns = defaultBuiltIns
 ): Context => {
-  const context = createEmptyContext(variant, externalSymbols, externalContext)
+  const context = createEmptyContext(variant, externalSymbols, externalContext, externalBuiltIns)
 
   return context
 }
