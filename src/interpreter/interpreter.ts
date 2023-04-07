@@ -18,6 +18,7 @@ import {
   Context,
   DeclarationExpression,
   DeclarationNode,
+  DerefStashValueInstruction,
   EnvironmentRestoreInstruction,
   ExpressionListNode,
   ExpressionStatementNode,
@@ -26,6 +27,7 @@ import {
   FunctionDefinitionNode,
   IdentifierNode,
   LambdaExpression,
+  LoadAddressInstruction,
   MarkInstruction,
   Node,
   NumberNode,
@@ -36,204 +38,12 @@ import {
   ReturnStatementNode,
   SelectionStatementNode,
   TranslationUnitNode,
+  UnaryExpressionNode,
   Value,
   WhileInstruction,
   WhileStatementNode
 } from '../types'
 import { Memory } from './memory'
-
-// class Thunk {
-//   public value: Value
-//   public isMemoized: boolean
-//   constructor(public exp: es.Node, public env: Environment) {
-//     this.isMemoized = false
-//     this.value = null
-//   }
-// }
-
-// function* forceIt(val: any, context: Context): Value {
-//   if (val instanceof Thunk) {
-//     if (val.isMemoized) return val.value
-
-//     pushEnvironment(context, val.env)
-//     const evalRes = yield* actualValue(val.exp, context)
-//     popEnvironment(context)
-//     val.value = evalRes
-//     val.isMemoized = true
-//     return evalRes
-//   } else return val
-// }
-
-// export function* actualValue(exp: es.Node, context: Context): Value {
-//   const evalResult = yield* evaluate(exp, context)
-//   const forced = yield* forceIt(evalResult, context)
-//   return forced
-// }
-
-// const handleRuntimeError = (context: Context, error: RuntimeSourceError): never => {
-//   context.errors.push(error)
-//   context.runtime.environments = context.runtime.environments.slice(
-//     -context.numberOfOuterEnvironments
-//   )
-//   throw error
-// }
-
-// function* visit(context: Context, node: es.Node) {
-//   context.runtime.nodes.unshift(node)
-//   yield context
-// }
-
-// function* leave(context: Context) {
-//   context.runtime.break = false
-//   context.runtime.nodes.shift()
-//   yield context
-// }
-
-// const popEnvironment = (context: Context) => context.runtime.environments.shift()
-// export const pushEnvironment = (context: Context, environment: Environment) => {
-//   context.runtime.environments.unshift(environment)
-//   context.runtime.environmentTree.insert(environment)
-// }
-
-// export type Evaluator<T extends es.Node> = (node: T, context: Context) => IterableIterator<Value>
-
-// function* evaluateBlockSatement(context: Context, node: es.BlockStatement) {
-//   let result
-//   for (const statement of node.body) {
-//     result = yield* evaluate(statement, context)
-//   }
-//   return result
-// }
-
-// /**
-//  * WARNING: Do not use object literal shorthands, e.g.
-//  *   {
-//  *     *Literal(node: es.Literal, ...) {...},
-//  *     *ThisExpression(node: es.ThisExpression, ..._ {...},
-//  *     ...
-//  *   }
-//  * They do not minify well, raising uncaught syntax errors in production.
-//  * See: https://github.com/webpack/webpack/issues/7566
-//  */
-// // tslint:disable:object-literal-shorthand
-// // prettier-ignore
-// export const evaluators: { [nodeType: string]: Evaluator<es.Node> } = {
-//   /** Simple Values */
-//   Literal: function* (node: es.Literal, _context: Context) {
-//     return node.value
-//   },
-
-//   TemplateLiteral: function* (node: es.TemplateLiteral) {
-//     // Expressions like `${1}` are not allowed, so no processing needed
-//     return node.quasis[0].value.cooked
-//   },
-
-//   ThisExpression: function* (node: es.ThisExpression, context: Context) {
-//     throw new Error(`not supported yet: ${node.type}`)
-//   },
-
-//   ArrayExpression: function* (node: es.ArrayExpression, context: Context) {
-//     throw new Error(`not supported yet: ${node.type}`)
-//   },
-
-//   FunctionExpression: function* (node: es.FunctionExpression, context: Context) {
-//     throw new Error(`not supported yet: ${node.type}`)
-//   },
-
-//   ArrowFunctionExpression: function* (node: es.ArrowFunctionExpression, context: Context) {
-//     throw new Error(`not supported yet: ${node.type}`)
-//   },
-
-//   Identifier: function* (node: es.Identifier, context: Context) {
-//     throw new Error(`not supported yet: ${node.type}`)
-//   },
-
-//   CallExpression: function* (node: es.CallExpression, context: Context) {
-//     throw new Error(`not supported yet: ${node.type}`)
-//   },
-
-//   NewExpression: function* (node: es.NewExpression, context: Context) {
-//     throw new Error(`not supported yet: ${node.type}`)
-//   },
-
-//   UnaryExpression: function* (node: es.UnaryExpression, context: Context) {
-//     const value = yield* actualValue(node.argument, context)
-
-//     const error = rttc.checkUnaryExpression(node, node.operator, value)
-//     if (error) {
-//       return handleRuntimeError(context, error)
-//     }
-//     return evaluateUnaryExpression(node.operator, value)
-//   },
-
-//   BinaryExpression: function* (node: es.BinaryExpression, context: Context) {
-//     const left = yield* actualValue(node.left, context)
-//     const right = yield* actualValue(node.right, context)
-//     const error = rttc.checkBinaryExpression(node, node.operator, left, right)
-//     if (error) {
-//       return handleRuntimeError(context, error)
-//     }
-//     return evaluateBinaryExpression(node.operator, left, right)
-//   },
-
-//   ConditionalExpression: function* (node: es.ConditionalExpression, context: Context) {
-//     throw new Error(`not supported yet: ${node.type}`)
-//   },
-
-//   LogicalExpression: function* (node: es.LogicalExpression, context: Context) {
-//     throw new Error(`not supported yet: ${node.type}`)
-//   },
-
-//   VariableDeclaration: function* (node: es.VariableDeclaration, context: Context) {
-//     throw new Error(`not supported yet: ${node.type}`)
-//   },
-
-//   ContinueStatement: function* (_node: es.ContinueStatement, _context: Context) {
-//     throw new Error(`not supported yet: ${_node.type}`)
-//   },
-
-//   BreakStatement: function* (_node: es.BreakStatement, _context: Context) {
-//     throw new Error(`not supported yet: ${_node.type}`)
-//   },
-
-//   ForStatement: function* (node: es.ForStatement, context: Context) {
-//     throw new Error(`not supported yet: ${node.type}`)
-//   },
-
-//   AssignmentExpression: function* (node: es.AssignmentExpression, context: Context) {
-//     throw new Error(`not supported yet: ${node.type}`)
-//   },
-
-//   FunctionDeclaration: function* (node: es.FunctionDeclaration, context: Context) {
-//     throw new Error(`not supported yet: ${node.type}`)
-//   },
-
-//   IfStatement: function* (node: es.IfStatement | es.ConditionalExpression, context: Context) {
-//     throw new Error(`not supported yet: ${node.type}`)
-//   },
-
-//   ExpressionStatement: function* (node: es.ExpressionStatement, context: Context) {
-//     return yield* evaluate(node.expression, context)
-//   },
-
-//   ReturnStatement: function* (node: es.ReturnStatement, context: Context) {
-//     throw new Error(`not supported yet: ${node.type}`)
-//   },
-
-//   WhileStatement: function* (node: es.WhileStatement, context: Context) {
-//     throw new Error(`not supported yet: ${node.type}`)
-//   },
-
-//   BlockStatement: function* (node: es.BlockStatement, context: Context) {
-//     throw new Error(`not supported yet: ${node.type}`)
-//   },
-
-//   Program: function* (node: es.BlockStatement, context: Context) {
-//     const result = yield* forceIt(yield* evaluateBlockSatement(context, node), context);
-//     return result;
-//   }
-// }
-// // tslint:enable:object-literal-shorthand
 
 type InterpreterContext = {
   agenda: Command[]
@@ -248,27 +58,21 @@ const isTrue = (val: any) => {
   return val !== 0
 }
 
-const assign = (identifier: string, val: Value, interpreterContext: InterpreterContext) => {
-  const { variableLookupEnv, env, memory } = interpreterContext
-  const pos = lookupVairable(identifier, variableLookupEnv)
-  memory.setEnvironmentValue(env, pos, val)
-}
-
 const scanDeclarations = (cmds: Command[]): string[] => {
   const locals: string[] = []
   cmds.forEach((cmd: Command) => {
     if (cmd.tag == 'ExternalDeclaration') {
       const { declaration, functionDefinition } = cmd as ExternalDeclarationNode
       if (declaration) {
-        locals.push(declaration.identifier)
+        locals.push(declaration.declarator.directDeclarator.identifier)
       }
       if (functionDefinition) {
         locals.push(functionDefinition.declarator.directDeclarator.identifier)
       }
     }
     if (cmd.tag == 'Declaration') {
-      const { identifier } = cmd as DeclarationNode
-      locals.push(identifier)
+      const { declarator } = cmd as DeclarationNode
+      locals.push(declarator.directDeclarator.identifier)
     }
   })
   return locals
@@ -289,16 +93,16 @@ const extendVariableLookupEnv = (locals: string[], lookupEnv: string[][]) => {
   return newEnv
 }
 
-const lookupVairable = (sym: string, lookupEnv: string[][]) => {
+const lookupVariable = (identifier: string, lookupEnv: string[][]) => {
   let frameIndex = lookupEnv.length
   let valueIndex = -1
   while (valueIndex == -1) {
     if (frameIndex == 0) {
-      throw new Error(`undefined reference to ${sym}`)
+      throw new Error(`undefined reference to ${identifier}`)
     }
     const frame = lookupEnv[--frameIndex]
     for (let i = 0; i < frame.length; i++) {
-      if (frame[i] === sym) {
+      if (frame[i] === identifier) {
         valueIndex = i
         break
       }
@@ -312,6 +116,8 @@ const applyBinaryOp = (sym: string, leftOperand: Value, rightOperand: Value): Va
 const popInstruction: PopInstruction = { tag: 'Pop' }
 const markInstruction: MarkInstruction = { tag: 'MarkInstruction' }
 const resetInstruction: ResetInstruction = { tag: 'ResetInstruction' }
+const assignmentInstruction: AssignmentInstruction = { tag: 'AssignmentInstruction' }
+const derefStashValueInstruction: DerefStashValueInstruction = { tag: 'DerefStashValueInstruction' }
 
 const createEnvironmentRestoreInstruction = (
   env: number,
@@ -334,12 +140,37 @@ const binaryOpMicrocode = {
   '!=': (x: number, y: number) => (x != y ? 1 : 0)
 }
 
-const popStash = (stash: Value[]) => {
+const derefStashVal = (val: any, interpreterContext: InterpreterContext) => {
+  const { memory, closurePool } = interpreterContext
+  if (!memory.isAddress(val)) {
+    return val
+  }
+  const payload = memory.addressDeref(val)
+  return memory.isClosure(payload) ? closurePool[memory.getClosurePoolIndex(payload)] : payload
+}
+
+const popStash = (interpreterContext: InterpreterContext, deref: boolean = true) => {
+  const { stash } = interpreterContext
   const val = stash.pop()
   if (val == undefined) {
     throw Error('internal error: expected value from stash')
   }
-  return val
+  if (!deref) {
+    return val
+  }
+  return derefStashVal(val, interpreterContext)
+}
+
+const peekStash = (interpreterContext: InterpreterContext, deref: boolean = true) => {
+  const { stash } = interpreterContext
+  if (stash.length == 0) {
+    throw Error('internal error: expected value from stash')
+  }
+  const val = stash[stash.length - 1]
+  if (!deref) {
+    return val
+  }
+  return derefStashVal(val, interpreterContext)
 }
 
 const popAgenda = (agenda: Command[]) => {
@@ -348,13 +179,6 @@ const popAgenda = (agenda: Command[]) => {
     throw Error('internal error: expected value from agenda')
   }
   return val
-}
-
-const peek = (stash: Value[]) => {
-  if (stash.length == 0) {
-    throw Error('internal error: expected value from stash')
-  }
-  return stash[stash.length - 1]
 }
 
 const microcode = {
@@ -387,10 +211,10 @@ const microcode = {
   FunctionDefinition: (cmd: Command, interpreterContext: InterpreterContext) => {
     const { agenda } = interpreterContext
 
-    const { type, declarator, body } = cmd as FunctionDefinitionNode
+    const { declarator, body } = cmd as FunctionDefinitionNode
     const { directDeclarator } = declarator // TODO: handle pointer
     const { identifier, parameterList } = directDeclarator
-    agenda.push({
+    agenda.push(popInstruction, {
       tag: 'DeclarationExpression',
       identifier,
       expr: {
@@ -424,13 +248,18 @@ const microcode = {
   Declaration: (cmd: Command, interpreterContext: InterpreterContext) => {
     const { agenda } = interpreterContext
 
-    const { identifier, initializer } = cmd as DeclarationNode
+    const {
+      declarator: {
+        directDeclarator: { identifier }
+      },
+      initializer
+    } = cmd as DeclarationNode
     if (!initializer) {
       // TODO: handle identifier only situation
       return
     }
     if (initializer.expr) {
-      agenda.push({
+      agenda.push(popInstruction, {
         tag: 'DeclarationExpression',
         identifier,
         expr: initializer.expr
@@ -468,10 +297,12 @@ const microcode = {
 
   ReturnStatement: (cmd: Command, interpreterContext: InterpreterContext) => {
     const { agenda } = interpreterContext
-    const { exprs } = (cmd as ReturnStatementNode).exprs
+    const { exprs } = cmd as ReturnStatementNode
     agenda.push(resetInstruction)
-    const orderedExprs = exprs.slice().reverse()
-    agenda.push(...orderedExprs)
+    if (exprs.exprs.length > 0) {
+      agenda.push(derefStashValueInstruction)
+    }
+    agenda.push(exprs)
   },
 
   ResetInstruction: (cmd: Command, interpreterContext: InterpreterContext) => {
@@ -482,11 +313,15 @@ const microcode = {
     }
   },
 
+  DerefStashValueInstruction: (cmd: Command, interpreterContext: InterpreterContext) => {
+    const { stash } = interpreterContext
+    stash.push(popStash(interpreterContext))
+  },
+
   ExpressionStatement: (cmd: Command, interpreterContext: InterpreterContext) => {
     const { agenda } = interpreterContext
     const { exprs } = cmd as ExpressionStatementNode
-    const orderedExprs = exprs.slice().reverse()
-    agenda.push(...orderedExprs)
+    agenda.push(popInstruction, exprs)
   },
 
   FunctionApplication: (cmd: Command, interpreterContext: InterpreterContext) => {
@@ -501,15 +336,15 @@ const microcode = {
   },
 
   ApplicationInstruction: (cmd: Command, interpreterContext: InterpreterContext) => {
-    const { stash, env, agenda, variableLookupEnv, memory } = interpreterContext
+    const { env, agenda, variableLookupEnv, memory } = interpreterContext
     const { arity } = cmd as ApplicationInstruction
 
     const args: any[] = []
     for (let i = arity - 1; i >= 0; i--) {
-      args[i] = popStash(stash)
+      args[i] = popStash(interpreterContext)
     }
 
-    const func = popStash(stash) as ClosureExpression
+    const func = popStash(interpreterContext)
     const params = scanParameters(func.prms)
     interpreterContext.variableLookupEnv = extendVariableLookupEnv(params, variableLookupEnv)
     const frameAddress = memory.allocateFrame(params.length)
@@ -520,7 +355,10 @@ const microcode = {
 
     // TODO: implement builtin here
     // if (func.tag == 'builtin') { }
-    if (agenda.length == 0 || (peek(agenda) as Command).tag == 'EnvironmentRestoreInstruction') {
+    if (
+      agenda.length == 0 ||
+      (agenda[agenda.length - 1] as Command).tag == 'EnvironmentRestoreInstruction'
+    ) {
       agenda.push(markInstruction)
     } else {
       agenda.push(createEnvironmentRestoreInstruction(env, variableLookupEnv))
@@ -534,45 +372,43 @@ const microcode = {
 
     const { identifier, expr } = cmd as DeclarationExpression
     agenda.push(
+      assignmentInstruction,
       {
-        tag: 'AssignmentInstruction',
+        tag: 'LoadAddressInstruction',
         identifier
       },
       expr
     )
   },
 
+  LoadAddressInstruction: (cmd: Command, interpreterContext: InterpreterContext) => {
+    const { env, variableLookupEnv, memory, stash } = interpreterContext
+    const { identifier } = cmd as LoadAddressInstruction
+    const pos = lookupVariable(identifier, variableLookupEnv)
+    const address = memory.getEnvironmentAddress(env, pos)
+    stash.push(address)
+  },
+
   AssignmentInstruction: (cmd: Command, interpreterContext: InterpreterContext) => {
-    const { stash, memory } = interpreterContext
-    const { identifier } = cmd as AssignmentInstruction
-    assign(identifier, popStash(stash), interpreterContext)
+    const { memory } = interpreterContext
+    const leftAddress = popStash(interpreterContext, false)
+    const rightExpr = peekStash(interpreterContext)
+    memory.setValueAtAddress(leftAddress, rightExpr)
   },
 
   AssignmentExpression: (cmd: Command, interpreterContext: InterpreterContext) => {
     const { agenda } = interpreterContext
-    const { identifier, expr } = cmd as AssignmentExpressionNode
-    agenda.push(
-      {
-        tag: 'AssignmentInstruction',
-        identifier
-      },
-      expr
-    )
+    const { leftExpr, rightExpr } = cmd as AssignmentExpressionNode
+    agenda.push(assignmentInstruction, leftExpr, rightExpr)
   },
 
   Identifier: (cmd: Command, interpreterContext: InterpreterContext) => {
-    const { variableLookupEnv, stash, memory, env, closurePool } = interpreterContext
-    const { val: sym } = cmd as IdentifierNode
-
-    const pos = lookupVairable(sym, variableLookupEnv)
-    const val = memory.getEnvironmentValue(env, pos)
-
-    if (memory.isClosure(val)) {
-      const closurePoolIndex = memory.getClosurePoolIndex(val)
-      stash.push(closurePool[closurePoolIndex])
-    } else {
-      stash.push(val)
-    }
+    const { agenda } = interpreterContext
+    const { val: identifier } = cmd as IdentifierNode
+    agenda.push({
+      tag: 'LoadAddressInstruction',
+      identifier
+    })
   },
 
   ConditionalExpression: (cmd: Command, interpreterContext: InterpreterContext) => {
@@ -602,10 +438,10 @@ const microcode = {
   },
 
   BranchInstruction: (cmd: Command, interpreterContext: InterpreterContext) => {
-    const { agenda, stash } = interpreterContext
+    const { agenda, stash, memory } = interpreterContext
 
     const { cons, alt } = cmd as BranchInstruction
-    if (isTrue(popStash(stash))) {
+    if (isTrue(popStash(interpreterContext))) {
       agenda.push(cons)
     } else if (alt) {
       agenda.push(alt)
@@ -622,11 +458,11 @@ const microcode = {
   },
 
   BinaryOpInstruction: (cmd: Command, interpreterContext: InterpreterContext) => {
-    const { stash } = interpreterContext
+    const { stash, memory } = interpreterContext
 
     const { sym } = cmd as BinaryOpInstruction
-    const rightOperand = popStash(stash)
-    const leftOperand = popStash(stash)
+    const rightOperand = popStash(interpreterContext)
+    const leftOperand = popStash(interpreterContext)
     stash.push(applyBinaryOp(sym, leftOperand, rightOperand))
   },
 
@@ -644,6 +480,14 @@ const microcode = {
     agenda.push(...expressionListCmds)
   },
 
+  UnaryExpression: (cmd: Command, interpreterContext: InterpreterContext) => {
+    const { agenda } = interpreterContext
+    const { sym, expr } = cmd as UnaryExpressionNode
+    if (sym == '*') {
+      agenda.push(derefStashValueInstruction, expr)
+    }
+  },
+
   WhileStatement: (cmd: Command, interpreterContext: InterpreterContext) => {
     const { agenda } = interpreterContext
     const { pred, body } = cmd as WhileStatementNode
@@ -658,9 +502,9 @@ const microcode = {
   },
 
   WhileInstruction: (cmd: Command, interpreterContext: InterpreterContext) => {
-    const { agenda, stash } = interpreterContext
+    const { agenda, stash, memory } = interpreterContext
     const { pred, body } = cmd as WhileInstruction
-    if (isTrue(popStash(stash))) {
+    if (isTrue(popStash(interpreterContext))) {
       agenda.push(cmd, pred, body)
     }
   },
@@ -706,8 +550,7 @@ const microcode = {
   },
 
   Pop: (cmd: Command, interpreterContext: InterpreterContext) => {
-    const { stash } = interpreterContext
-    popStash(stash)
+    popStash(interpreterContext)
   }
 }
 
@@ -741,7 +584,7 @@ function runInterpreter(context: Context, interpreterContext: InterpreterContext
   if (i === step_limit) throw new Error('step limit ' + step_limit + ' exceeded')
   if (stash.length > 1 || stash.length < 1)
     throw new Error('internal error: stash must be singleton')
-  return stash[0]
+  return popStash(interpreterContext)
 }
 
 export function* evaluate(node: Node, context: Context) {

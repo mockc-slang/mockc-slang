@@ -397,7 +397,6 @@ export type Command =
   | Instruction
 
 export type Instruction =
-  | DeclarationInstruction
   | AssignmentInstruction
   | BranchInstruction
   | BinaryOpInstruction
@@ -407,12 +406,8 @@ export type Instruction =
   | ResetInstruction
   | ApplicationInstruction
   | WhileInstruction
-
-export type WhileInstruction = {
-  tag: 'WhileInstruction'
-  pred: ExpressionListNode
-  body: StatementNode
-}
+  | LoadAddressInstruction
+  | DerefStashValueInstruction
 
 export type DeclarationExpression = {
   tag: 'DeclarationExpression'
@@ -420,14 +415,23 @@ export type DeclarationExpression = {
   expr: Command
 }
 
-export type DeclarationInstruction = {
-  tag: 'DeclarationInstruction'
+export type DerefStashValueInstruction = {
+  tag: 'DerefStashValueInstruction'
+}
+
+export type LoadAddressInstruction = {
+  tag: 'LoadAddressInstruction'
   identifier: string
+}
+
+export type WhileInstruction = {
+  tag: 'WhileInstruction'
+  pred: ExpressionListNode
+  body: StatementNode
 }
 
 export type AssignmentInstruction = {
   tag: 'AssignmentInstruction'
-  identifier: string
 }
 
 export type LambdaExpression = {
@@ -486,6 +490,7 @@ export type Node =
   | InitDeclaratorNode
   | DeclaratorNode
   | DirectDeclaratorNode
+  | PointerNode
   | InitializerNode
   | ExpressionNode
   | StatementNode
@@ -502,6 +507,7 @@ export type ExpressionNode =
   | CharacterLiteralNode
   | IdentifierNode
   | ExpressionListNode
+  | UnaryExpressionNode
 
 export type StatementNode =
   | ExpressionStatementNode
@@ -540,7 +546,7 @@ export type FunctionDefinitionNode = {
 export type DeclarationNode = {
   tag: 'Declaration'
   type: string
-  identifier: string
+  declarator: DeclaratorNode
   initializer?: InitializerNode
 }
 
@@ -551,7 +557,7 @@ export type TypeSpecifierNode = {
 
 export type InitDeclaratorNode = {
   tag: 'InitDeclarator'
-  identifier: string
+  declarator: DeclaratorNode
   initializer?: InitializerNode
 }
 
@@ -562,7 +568,7 @@ export type CompoundStatementNode = {
 
 export type ExpressionStatementNode = {
   tag: 'ExpressionStatement'
-  exprs: ExpressionNode[]
+  exprs: ExpressionListNode
 }
 
 export type SelectionStatementNode = {
@@ -594,12 +600,18 @@ export type ReturnStatementNode = {
 export type DeclaratorNode = {
   tag: 'Declarator'
   directDeclarator: DirectDeclaratorNode
+  pointer?: PointerNode
 }
 
 export type DirectDeclaratorNode = {
   tag: 'DirectDeclarator'
   identifier: string
   parameterList: ParameterListNode
+}
+
+export type PointerNode = {
+  tag: 'Pointer'
+  pointer?: PointerNode
 }
 
 export type ParameterListNode = {
@@ -620,9 +632,9 @@ export type InitializerNode = {
 
 export type AssignmentExpressionNode = {
   tag: 'AssignmentExpression'
-  identifier: string
+  leftExpr: ExpressionNode
   sym: string
-  expr: ExpressionNode
+  rightExpr: ExpressionNode
 }
 
 export type ConditionalExpressionNode = {
@@ -668,4 +680,10 @@ export type BinaryOpExpressionNode = {
   sym: string
   leftExpr: ExpressionNode
   rightExpr: ExpressionNode
+}
+
+export type UnaryExpressionNode = {
+  tag: 'UnaryExpression'
+  sym: string
+  expr: ExpressionNode
 }

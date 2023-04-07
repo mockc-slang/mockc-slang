@@ -80,11 +80,13 @@ import {
   Node,
   ParameterDeclarationNode,
   ParameterListNode,
+  PointerNode,
   SelectionStatementNode,
   SourceError,
   StatementNode,
   TranslationUnitNode,
-  TypeSpecifierNode
+  TypeSpecifierNode,
+  UnaryExpressionNode
 } from '../types'
 
 // export class DisallowedConstructError implements SourceError {
@@ -258,11 +260,17 @@ class NodeGenerator implements MockCVisitor<Node> {
   visitDeclarator(ctx: DeclaratorContext): DeclaratorNode {
     return {
       tag: 'Declarator',
-      directDeclarator: ctx.directDeclarator().accept(this) as DirectDeclaratorNode
+      directDeclarator: ctx.directDeclarator().accept(this) as DirectDeclaratorNode,
+      pointer: ctx.pointer()?.accept(this) as PointerNode | undefined
     }
   }
 
-  visitPointer?: ((ctx: PointerContext) => Node) | undefined
+  visitPointer(ctx: PointerContext): PointerNode {
+    return {
+      tag: 'Pointer',
+      pointer: ctx.pointer()?.accept(this) as PointerNode | undefined
+    }
+  }
 
   visitDirectDeclarator(ctx: DirectDeclaratorContext): DirectDeclaratorNode {
     const parameterList = (ctx.parameterList()?.accept(this) as ParameterListNode) || {
@@ -378,6 +386,15 @@ class NodeGenerator implements MockCVisitor<Node> {
 
   visitUnaryExpression(ctx: UnaryExpressionContext): ExpressionNode {
     // TODO: Check for unary expression
+    const unaryOperator = ctx.unaryOperator()
+    const castExpression = ctx.castExpression()?.accept(this) as ExpressionNode | undefined
+    if (unaryOperator && castExpression) {
+      return {
+        tag: 'UnaryExpression',
+        sym: unaryOperator.text,
+        expr: castExpression
+      }
+    }
     return ctx.postfixExpression()?.accept(this) as ExpressionNode
   }
 
@@ -471,18 +488,15 @@ class NodeGenerator implements MockCVisitor<Node> {
   }
 
   visitAssignmentExpression(ctx: AssignmentExpressionContext): ExpressionNode {
-    const unaryExpression = ctx.unaryExpression()
-    const assignmentOperator = ctx.assignmentOperator()
-    const assignmentExpression = ctx.assignmentExpression()
-    if (unaryExpression && assignmentOperator && assignmentExpression) {
-      const { val: identifier } = unaryExpression.accept(this) as IdentifierNode
-      const sym = assignmentOperator.text
-      const expr = assignmentExpression.accept(this) as ExpressionNode
+    const leftExpr = ctx.unaryExpression()?.accept(this) as ExpressionNode
+    const sym = ctx.assignmentOperator()?.text
+    const rightExpr = ctx.assignmentExpression()?.accept(this) as ExpressionNode
+    if (leftExpr && sym && rightExpr) {
       return {
         tag: 'AssignmentExpression',
-        identifier,
+        leftExpr,
         sym,
-        expr
+        rightExpr
       }
     }
     return ctx.conditionalExpression()?.accept(this) as ExpressionNode
@@ -516,11 +530,11 @@ class NodeGenerator implements MockCVisitor<Node> {
   }
 
   visitDeclaration(ctx: DeclarationContext): DeclarationNode {
-    const { identifier, initializer } = ctx.initDeclarator().accept(this) as InitDeclaratorNode
+    const { declarator, initializer } = ctx.initDeclarator().accept(this) as InitDeclaratorNode
     return {
       tag: 'Declaration',
       type: ctx.typeSpecifier().text,
-      identifier,
+      declarator,
       initializer
     }
   }
@@ -528,7 +542,7 @@ class NodeGenerator implements MockCVisitor<Node> {
   visitInitDeclarator(ctx: InitDeclaratorContext): InitDeclaratorNode {
     return {
       tag: 'InitDeclarator',
-      identifier: ctx.declarator().directDeclarator().IDENTIFIER().text,
+      declarator: ctx.declarator().accept(this) as DeclaratorNode,
       initializer: ctx.initializer()?.accept(this) as InitializerNode
     }
   }
@@ -585,7 +599,10 @@ class NodeGenerator implements MockCVisitor<Node> {
 
     return {
       tag: 'ExpressionStatement',
-      exprs: expressionList?.exprs || []
+      exprs: expressionList || {
+        tag: 'ExpressionList',
+        exprs: []
+      }
     }
   }
 
@@ -674,7 +691,7 @@ export function parse(source: string, context: Context) {
     try {
       const tree = parser.compilationUnit()
       program = convertSource(tree)
-      // console.log(JSON.stringify(program, undefined, 2), 'final tree')
+      console.log(JSON.stringify(program, undefined, 2), 'final tree')
       checkTyping(program)
     } catch (error) {
       if (error instanceof FatalSyntaxError || error instanceof FatalTypeError) {

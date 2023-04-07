@@ -1,6 +1,6 @@
 import * as es from 'estree'
 
-import { ErrorSeverity, ErrorType, Node, SourceError } from '../types'
+import { ErrorSeverity, ErrorType, Node, PointerNode, SourceError } from '../types'
 
 export class FatalTypeError implements SourceError {
   public type = ErrorType.SYNTAX
@@ -47,21 +47,28 @@ type TypeFrame = {
 }
 type TypeEnvironment = TypeFrame[]
 
-function toString(type: TypeAssignment): string {
+const toString = (type: TypeAssignment): string => {
   if (!type) return 'undefined'
   if (type.tag == 'Variable') return type.type
   const { parameterTypes, returnType } = type
   return `(${parameterTypes.map(paramType => toString(paramType))}) => ${toString(returnType)}`
 }
 
-function getVariableTypeFromString(type: string): VariableTypeAssignment {
-  switch (type) {
+const getVariableType = (
+  typeString: string,
+  pointer: PointerNode | undefined
+): VariableTypeAssignment => {
+  let type = typeString
+  while (pointer) {
+    type += '*'
+    pointer = pointer.pointer
+  }
+
+  switch (typeString) {
     case 'int':
-      return INT_TYPE
-    case 'char':
-      return CHAR_TYPE
+      break
     case 'void':
-      return VOID_TYPE
+      if (!pointer) break
     default:
       throw new FatalTypeError(
         {
@@ -77,9 +84,14 @@ function getVariableTypeFromString(type: string): VariableTypeAssignment {
         `Unknown type ${type}`
       )
   }
+
+  return {
+    tag: 'Variable',
+    type
+  }
 }
 
-function isSameType(a: TypeAssignment, b: TypeAssignment): boolean {
+const isSameType = (a: TypeAssignment, b: TypeAssignment): boolean => {
   if (!a || !b) return false
   if (a.tag == 'Variable' && b.tag == 'Variable') {
     return a.type == b.type
@@ -100,15 +112,21 @@ function isSameType(a: TypeAssignment, b: TypeAssignment): boolean {
   return false
 }
 
-function extendEnvironment(E: TypeEnvironment, tag: string) {
+const isPointer = (a: TypeAssignment): boolean => {
+  if (!a) return false
+  if (a.tag == 'Closure') return false
+  return a.type.includes('*')
+}
+
+const extendEnvironment = (E: TypeEnvironment, tag: string) => {
   E.push({ tag, assignments: {} })
 }
 
-function exitEnvironment(E: TypeEnvironment) {
+const exitEnvironment = (E: TypeEnvironment) => {
   E.pop()
 }
 
-function isInsideLoop(E: TypeEnvironment) {
+const isInsideLoop = (E: TypeEnvironment) => {
   for (let i = E.length - 1; i >= 0; i--) {
     if (E[i].tag == 'loop') {
       return true
@@ -117,17 +135,17 @@ function isInsideLoop(E: TypeEnvironment) {
   return false
 }
 
-function assignIdentifierType(identifier: string, type: TypeAssignment, E: TypeEnvironment) {
+const assignIdentifierType = (identifier: string, type: TypeAssignment, E: TypeEnvironment) => {
   E[E.length - 1].assignments[identifier] = type
 }
 
-function checkIdentifierType(identifier: string, E: TypeEnvironment): IdentifierTypeAssignment {
+const checkIdentifierType = (identifier: string, E: TypeEnvironment): IdentifierTypeAssignment => {
   for (let i = E.length - 1; i >= 0; i--) {
     const type = E[i].assignments[identifier]
     if (!type) {
       continue
     }
-    return type
+    return JSON.parse(JSON.stringify(type))
   }
   throw new FatalTypeError(
     {
@@ -144,17 +162,14 @@ function checkIdentifierType(identifier: string, E: TypeEnvironment): Identifier
   )
 }
 
-function checkSymType(
+const checkSymType = (
   sym: string,
   leftExprType: TypeAssignment,
   rightExprType: TypeAssignment
-): TypeAssignment {
+): TypeAssignment => {
   switch (sym) {
-    case '+':
-    case '-':
-    case '==':
-    case '!=':
-      if (!isSameType(leftExprType, INT_TYPE) || !isSameType(rightExprType, INT_TYPE)) {
+    case '=':
+      if (!isSameType(leftExprType, rightExprType)) {
         throw new FatalTypeError(
           {
             start: {
@@ -166,12 +181,60 @@ function checkSymType(
               column: 0
             }
           },
-          `'${sym}' operator must be applied on 'int' 'int': instead found '${toString(
+          `Assignment type mismatch: '${toString(rightExprType)}' assigned to '${toString(
             leftExprType
-          )}' and '${toString(rightExprType)}'`
+          )}'`
         )
       }
-      return INT_TYPE
+      return leftExprType
+    case '+':
+    case '-':
+      if (isSameType(leftExprType, INT_TYPE) && isSameType(rightExprType, INT_TYPE)) {
+        return INT_TYPE
+      }
+      if (
+        (isSameType(leftExprType, INT_TYPE) || isSameType(rightExprType, INT_TYPE)) &&
+        (isPointer(leftExprType) || isPointer(rightExprType))
+      ) {
+        return isPointer(leftExprType) ? leftExprType : rightExprType
+      }
+      throw new FatalTypeError(
+        {
+          start: {
+            line: 0,
+            column: 0
+          },
+          end: {
+            line: 0,
+            column: 0
+          }
+        },
+        `Binary operator'${sym}' cannot be applied on '${toString(leftExprType)}' and '${toString(
+          rightExprType
+        )}'`
+      )
+    case '==':
+    case '!=':
+      if (
+        isSameType(leftExprType, rightExprType) &&
+        (isSameType(leftExprType, INT_TYPE) || isPointer(leftExprType))
+      )
+        return INT_TYPE
+      throw new FatalTypeError(
+        {
+          start: {
+            line: 0,
+            column: 0
+          },
+          end: {
+            line: 0,
+            column: 0
+          }
+        },
+        `Binary operator'${sym}' cannot be applied on '${toString(leftExprType)}' and '${toString(
+          rightExprType
+        )}'`
+      )
     default:
       throw new FatalTypeError(
         {
@@ -189,7 +252,7 @@ function checkSymType(
   }
 }
 
-function check(node: Node | undefined, E: TypeEnvironment): TypeAssignment {
+const check = (node: Node | undefined, E: TypeEnvironment): TypeAssignment => {
   if (!node) {
     return
   }
@@ -212,8 +275,15 @@ function check(node: Node | undefined, E: TypeEnvironment): TypeAssignment {
   }
 
   if (tag == 'Declaration') {
-    const { type: typeString, identifier, initializer } = node
-    const declaredType = getVariableTypeFromString(typeString)
+    const {
+      type: typeString,
+      declarator: {
+        directDeclarator: { identifier },
+        pointer
+      },
+      initializer
+    } = node
+    const declaredType = getVariableType(typeString, pointer)
     const initializerType = check(initializer, E)
     if (initializerType && !isSameType(declaredType, initializerType)) {
       throw new FatalTypeError(
@@ -242,32 +312,10 @@ function check(node: Node | undefined, E: TypeEnvironment): TypeAssignment {
   }
 
   if (tag == 'AssignmentExpression') {
-    const { identifier, sym, expr } = node
-    const identifierType = checkIdentifierType(identifier, E)
-    const exprType = check(expr, E)
-
-    if (sym == '=') {
-      if (!isSameType(identifierType, exprType)) {
-        throw new FatalTypeError(
-          {
-            start: {
-              line: 0,
-              column: 0
-            },
-            end: {
-              line: 0,
-              column: 0
-            }
-          },
-          `Assignment type mismatch: '${toString(exprType)}' assigned to '${toString(
-            identifierType
-          )}'`
-        )
-      }
-      return identifierType
-    }
-
-    return checkSymType(sym, identifierType, exprType)
+    const { leftExpr, sym, rightExpr } = node
+    const leftExprType = check(leftExpr, E)
+    const rightExprType = check(rightExpr, E)
+    return checkSymType(sym, leftExprType, rightExprType)
   }
 
   if (tag == 'ConditionalExpression') {
@@ -323,12 +371,15 @@ function check(node: Node | undefined, E: TypeEnvironment): TypeAssignment {
   }
 
   if (tag == 'FunctionDefinition') {
-    const { type, declarator, body } = node
+    const { type: typeString, declarator, body } = node
     const {
-      identifier,
-      parameterList: { parameters }
-    } = declarator.directDeclarator
-    const returnType = getVariableTypeFromString(type)
+      pointer,
+      directDeclarator: {
+        identifier,
+        parameterList: { parameters }
+      }
+    } = declarator
+    const returnType = getVariableType(typeString, pointer)
     const closureType: TypeAssignment = {
       tag: 'Closure',
       parameterTypes: [],
@@ -361,19 +412,20 @@ function check(node: Node | undefined, E: TypeEnvironment): TypeAssignment {
 
   if (tag == 'ParameterDeclaration') {
     const {
-      type,
+      type: typeString,
       declarator: {
-        directDeclarator: { identifier }
+        directDeclarator: { identifier },
+        pointer
       }
     } = node
-    const parameterType = getVariableTypeFromString(type)
+    const parameterType = getVariableType(typeString, pointer)
     assignIdentifierType(identifier, parameterType, E)
     return parameterType
   }
 
   if (tag == 'ExpressionStatement') {
     const { exprs } = node
-    exprs.forEach(expr => check(expr, E))
+    check(exprs, E)
     return
   }
 
@@ -532,6 +584,46 @@ function check(node: Node | undefined, E: TypeEnvironment): TypeAssignment {
     return
   }
 
+  if (tag == 'UnaryExpression') {
+    const { sym, expr } = node
+    const exprType = check(expr, E)
+    if (!exprType) {
+      throw new FatalTypeError(
+        {
+          start: {
+            line: 0,
+            column: 0
+          },
+          end: {
+            line: 0,
+            column: 0
+          }
+        },
+        `Unary operator '${sym}' cannot be applied on 'undefined' type`
+      )
+    }
+
+    if (sym == '*') {
+      if (exprType.tag == 'Closure' || exprType.type[exprType.type.length - 1] != '*') {
+        throw new FatalTypeError(
+          {
+            start: {
+              line: 0,
+              column: 0
+            },
+            end: {
+              line: 0,
+              column: 0
+            }
+          },
+          `Unary operator '${sym}' must be used on pointer type`
+        )
+      }
+      exprType.type = exprType.type.substring(0, exprType.type.length - 1)
+      return exprType
+    }
+  }
+
   if (tag == 'ReturnStatement') {
     const { exprs } = node
     return check(exprs, E)
@@ -611,7 +703,7 @@ function check(node: Node | undefined, E: TypeEnvironment): TypeAssignment {
   )
 }
 
-export function checkTyping(program: Node) {
+export const checkTyping = (program: Node) => {
   const E: TypeEnvironment = [{ tag: 'block', assignments: {} }]
   check(program, E)
 }

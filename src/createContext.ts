@@ -1,7 +1,7 @@
 // Variable determining chapter of Source is contained in this file.
 
-import { Context, CustomBuiltIns, Environment, Variant } from './types'
 import * as misc from './stdlib/misc'
+import { Context, CustomBuiltIns, Environment, Variant } from './types'
 
 export class LazyBuiltIn {
   func: (...arg0: any) => any
