@@ -346,8 +346,17 @@ class NodeGenerator implements MockCVisitor<Node> {
   }
 
   visitRelationalExpression(ctx: RelationalExpressionContext): ExpressionNode {
-    // TODO: Check for relational expression
-    return ctx.shiftExpression().accept(this) as ExpressionNode
+    const relationalExpression = ctx.relationalExpression()?.accept(this) as ExpressionNode
+    const shiftExpression = ctx.shiftExpression()?.accept(this) as ExpressionNode
+    if (relationalExpression) {
+      return {
+        tag: 'BinaryOpExpression',
+        sym: ctx.getChild(1).text,
+        leftExpr: relationalExpression,
+        rightExpr: shiftExpression
+      }
+    }
+    return shiftExpression
   }
 
   visitShiftExpression(ctx: ShiftExpressionContext): ExpressionNode {
@@ -373,8 +382,19 @@ class NodeGenerator implements MockCVisitor<Node> {
   }
 
   visitMultiplicativeExpression(ctx: MultiplicativeExpressionContext): ExpressionNode {
-    // TODO: Check for multiplicative expression
-    return ctx.castExpression().accept(this) as ExpressionNode
+    const multiplicativeExpression = ctx.multiplicativeExpression()?.accept(this) as ExpressionNode
+    const castExpression = ctx.castExpression()?.accept(this) as ExpressionNode
+
+    if (multiplicativeExpression) {
+      return {
+        tag: 'BinaryOpExpression',
+        sym: ctx.getChild(1).text,
+        leftExpr: multiplicativeExpression,
+        rightExpr: castExpression
+      }
+    }
+
+    return castExpression
   }
 
   visitCastExpression(ctx: CastExpressionContext): ExpressionNode {
@@ -689,7 +709,7 @@ export function parse(source: string, context: Context) {
     try {
       const tree = parser.compilationUnit()
       program = convertSource(tree)
-      // console.log(JSON.stringify(program, undefined, 2), 'final tree')
+      console.log(JSON.stringify(program, undefined, 2), 'final tree')
       checkTyping(program)
     } catch (error) {
       if (error instanceof FatalSyntaxError || error instanceof FatalTypeError) {
