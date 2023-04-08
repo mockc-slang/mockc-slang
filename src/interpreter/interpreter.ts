@@ -583,9 +583,7 @@ function runInterpreter(context: Context, interpreterContext: InterpreterContext
     if (!cmd) break
     if (!microcode.hasOwnProperty(cmd.tag))
       throw new Error('internal error: unknown command ' + cmd.tag)
-    console.log(cmd)
     microcode[cmd.tag](cmd, interpreterContext)
-    console.log(stash)
     i++
   }
 
