@@ -103,9 +103,9 @@ export const peekAgenda = (agenda: Command[]) => {
 
 export const derefStashVal = (val: any, interpreterContext: InterpreterContext) => {
   const { memory, closurePool } = interpreterContext
-  if (!memory.isAddress(val)) {
-    return val
+  if (memory.isAddress(val)) {
+    const payload = memory.addressDeref(val)
+    return memory.isClosure(payload) ? closurePool[memory.getClosurePoolIndex(payload)] : payload
   }
-  const payload = memory.addressDeref(val)
-  return memory.isClosure(payload) ? closurePool[memory.getClosurePoolIndex(payload)] : payload
+  return val
 }

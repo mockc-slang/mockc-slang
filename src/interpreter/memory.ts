@@ -54,6 +54,7 @@ export class Memory {
   // memory words with payload
   static BuiltinTag = [0, 1, 0, 1, 0, 0]
   static AddressTag = [0, 1, 1, 0, 0, 0]
+  static RawAddressTag = [0, 1, 1, 1, 0, 0]
 
   // the first 13 bits of a NaN word are
   // needed to make the word a NaN. The
@@ -127,6 +128,13 @@ export class Memory {
       Memory.wordToString(this.getWordAtIndex(i)),
       '\n'
     )
+  }
+
+  // size in 8 bytes
+  allocateHeapMemory(size: number) {
+    const memoryIndex = this.heapFree
+    this.heapFree += size
+    return this.makeRawAddress(memoryIndex)
   }
 
   getWordAtIndex(index: number) {
@@ -233,6 +241,19 @@ export class Memory {
   // note that this limits the memory size to 4 Terabytes.
   makeAddress(index: number) {
     const address = this.makeTaggedNaN(Memory.AddressTag)
+    const buf = new ArrayBuffer(8)
+    const view = new DataView(buf)
+    view.setFloat64(0, address)
+    view.setInt32(4, index)
+    return view.getFloat64(0)
+  }
+
+  isRawAddress(x: number) {
+    return this.checkTag(x, Memory.RawAddressTag)
+  }
+
+  makeRawAddress(index: number) {
+    const address = this.makeTaggedNaN(Memory.RawAddressTag)
     const buf = new ArrayBuffer(8)
     const view = new DataView(buf)
     view.setFloat64(0, address)
