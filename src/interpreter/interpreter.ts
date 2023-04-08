@@ -173,8 +173,8 @@ const binaryOpMicrocode = {
   '!=': (x: number, y: number) => (x != y ? 1 : 0),
   '<': (x: number, y: number) => (x < y ? 1 : 0),
   '>': (x: number, y: number) => (x > y ? 1 : 0),
-  '<=': (x: number, y: number) => (x == y ? 1 : 0),
-  '>=': (x: number, y: number) => (x <= y ? 1 : 0)
+  '<=': (x: number, y: number) => (x <= y ? 1 : 0),
+  '>=': (x: number, y: number) => (x >= y ? 1 : 0)
 }
 
 const microcode = {
