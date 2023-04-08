@@ -1,4 +1,5 @@
 import { derefStashVal, InterpreterContext, popStash } from '../interpreter/interpreterContext'
+import { VOID_POINTER_TYPE } from '../typechecker/typechecker'
 
 export const builtinObject = {
   printf: {
@@ -29,5 +30,14 @@ export const builtinObject = {
       const str = memory.displayEnvironment(env)
       return context.externalBuiltIns.rawDisplay('', str, context)
     }
+  },
+  malloc: {
+    arity: 1,
+    func: (interpreterContext: InterpreterContext) => {
+      const { memory } = interpreterContext
+      const size = popStash(interpreterContext, false)
+      return memory.allocateHeapMemory(size)
+    },
+    type: VOID_POINTER_TYPE
   }
 }

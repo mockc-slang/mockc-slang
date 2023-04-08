@@ -408,6 +408,7 @@ export type Instruction =
   | WhileInstruction
   | LoadAddressInstruction
   | DerefStashValueInstruction
+  | AddressInstruction
 
 export type DeclarationExpression = {
   tag: 'DeclarationExpression'
@@ -417,6 +418,10 @@ export type DeclarationExpression = {
 
 export type DerefStashValueInstruction = {
   tag: 'DerefStashValueInstruction'
+}
+
+export type AddressInstruction = {
+  tag: 'AddressInstruction'
 }
 
 export type LoadAddressInstruction = {

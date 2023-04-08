@@ -4,6 +4,7 @@ import { create } from 'domain'
 
 import { RuntimeSourceError } from '../errors/runtimeSourceError'
 import {
+  AddressInstruction,
   ApplicationInstruction,
   AssignmentExpressionNode,
   AssignmentInstruction,
@@ -120,13 +121,18 @@ const lookupVariable = (identifier: string, lookupEnv: string[][]) => {
   return [frameIndex, valueIndex]
 }
 
-const applyBinaryOp = (sym: string, leftOperand: Value, rightOperand: Value): Value =>
-  binaryOpMicrocode[sym](leftOperand, rightOperand)
+const applyBinaryOp = (
+  sym: string,
+  leftOperand: Value,
+  rightOperand: Value,
+  interpreterContext: InterpreterContext
+): Value => binaryOpMicrocode[sym](leftOperand, rightOperand, interpreterContext)
 const popInstruction: PopInstruction = { tag: 'Pop' }
 const markInstruction: MarkInstruction = { tag: 'MarkInstruction' }
 const resetInstruction: ResetInstruction = { tag: 'ResetInstruction' }
 const assignmentInstruction: AssignmentInstruction = { tag: 'AssignmentInstruction' }
 const derefStashValueInstruction: DerefStashValueInstruction = { tag: 'DerefStashValueInstruction' }
+const addressInstruction: AddressInstruction = { tag: 'AddressInstruction' }
 
 const createEnvironmentRestoreInstruction = (
   env: number,
@@ -143,8 +149,23 @@ const createEnvironmentRestoreInstruction = (
 }
 
 const binaryOpMicrocode = {
-  '+': (x: number, y: number) => x + y,
-  '-': (x: number, y: number) => x - y,
+  '+': (x: number, y: number, interpreterContext: InterpreterContext) => {
+    const { memory } = interpreterContext
+    if (memory.isAddress(x) || memory.isRawAddress(x)) {
+      return memory.makeRawAddress(memory.getIndexFromAddress(x) + y)
+    }
+    if (memory.isAddress(y) || memory.isRawAddress(y)) {
+      return memory.makeRawAddress(memory.getIndexFromAddress(y) + x)
+    }
+    return x + y
+  },
+  '-': (x: number, y: number, interpreterContext: InterpreterContext) => {
+    const { memory } = interpreterContext
+    if (memory.isAddress(x) || memory.isRawAddress(x)) {
+      return memory.makeRawAddress(memory.getIndexFromAddress(x) - y)
+    }
+    return x - y
+  },
   '==': (x: number, y: number) => (x == y ? 1 : 0),
   '!=': (x: number, y: number) => (x != y ? 1 : 0)
 }
@@ -281,11 +302,6 @@ const microcode = {
     }
   },
 
-  DerefStashValueInstruction: (cmd: Command, interpreterContext: InterpreterContext) => {
-    const { stash } = interpreterContext
-    stash.push(popStash(interpreterContext))
-  },
-
   ExpressionStatement: (cmd: Command, interpreterContext: InterpreterContext) => {
     const { agenda } = interpreterContext
     const { exprs } = cmd as ExpressionStatementNode
@@ -363,8 +379,24 @@ const microcode = {
   AssignmentInstruction: (cmd: Command, interpreterContext: InterpreterContext) => {
     const { memory } = interpreterContext
     const leftAddress = popStash(interpreterContext, false)
-    const rightExpr = peekStash(interpreterContext)
-    memory.setValueAtAddress(leftAddress, rightExpr)
+    let rightVal = peekStash(interpreterContext)
+    if (memory.isRawAddress(rightVal)) {
+      rightVal = memory.makeAddress(memory.getIndexFromAddress(rightVal))
+    }
+    memory.setValueAtAddress(leftAddress, rightVal)
+  },
+
+  DerefStashValueInstruction: (cmd: Command, interpreterContext: InterpreterContext) => {
+    const { stash } = interpreterContext
+    stash.push(popStash(interpreterContext))
+  },
+
+  AddressInstruction: (cmd: Command, interpreterContext: InterpreterContext) => {
+    const { stash, memory } = interpreterContext
+    const address = popStash(interpreterContext, false)
+    const index = memory.getIndexFromAddress(address)
+    const rawAddress = memory.makeRawAddress(index)
+    stash.push(rawAddress)
   },
 
   AssignmentExpression: (cmd: Command, interpreterContext: InterpreterContext) => {
@@ -429,12 +461,12 @@ const microcode = {
   },
 
   BinaryOpInstruction: (cmd: Command, interpreterContext: InterpreterContext) => {
-    const { stash, memory } = interpreterContext
+    const { stash } = interpreterContext
 
     const { sym } = cmd as BinaryOpInstruction
     const rightOperand = popStash(interpreterContext)
     const leftOperand = popStash(interpreterContext)
-    stash.push(applyBinaryOp(sym, leftOperand, rightOperand))
+    stash.push(applyBinaryOp(sym, leftOperand, rightOperand, interpreterContext))
   },
 
   ExpressionList: (cmd: Command, interpreterContext: InterpreterContext) => {
@@ -456,6 +488,8 @@ const microcode = {
     const { sym, expr } = cmd as UnaryExpressionNode
     if (sym == '*') {
       agenda.push(derefStashValueInstruction, expr)
+    } else if (sym == '&') {
+      agenda.push(addressInstruction, expr)
     }
   },
 
@@ -549,7 +583,9 @@ function runInterpreter(context: Context, interpreterContext: InterpreterContext
     if (!cmd) break
     if (!microcode.hasOwnProperty(cmd.tag))
       throw new Error('internal error: unknown command ' + cmd.tag)
+    console.log(cmd)
     microcode[cmd.tag](cmd, interpreterContext)
+    console.log(stash)
     i++
   }
 

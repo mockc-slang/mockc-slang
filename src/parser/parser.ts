@@ -72,7 +72,6 @@ import {
   ExpressionStatementNode,
   ExternalDeclarationNode,
   FunctionDefinitionNode,
-  IdentifierNode,
   InitDeclaratorNode,
   InitializerNode,
   IterationStatementNode,
@@ -85,8 +84,7 @@ import {
   SourceError,
   StatementNode,
   TranslationUnitNode,
-  TypeSpecifierNode,
-  UnaryExpressionNode
+  TypeSpecifierNode
 } from '../types'
 
 // export class DisallowedConstructError implements SourceError {

@@ -29,6 +29,10 @@ const VOID_TYPE: VariableTypeAssignment = {
   tag: 'Variable',
   type: 'void'
 }
+export const VOID_POINTER_TYPE: VariableTypeAssignment = {
+  tag: 'Variable',
+  type: 'void*'
+}
 type IdentifierTypeAssignment = VariableTypeAssignment | ClosureTypeAssignment
 type TypeAssignment = IdentifierTypeAssignment | undefined
 type VariableTypeAssignment = {
@@ -170,6 +174,9 @@ const checkSymType = (
 ): TypeAssignment => {
   switch (sym) {
     case '=':
+      if (isPointer(leftExprType) && isSameType(rightExprType, VOID_POINTER_TYPE)) {
+        return leftExprType
+      }
       if (!isSameType(leftExprType, rightExprType)) {
         throw new FatalTypeError(
           {
@@ -189,7 +196,6 @@ const checkSymType = (
       }
       return leftExprType
     case '+':
-    case '-':
       if (isSameType(leftExprType, INT_TYPE) && isSameType(rightExprType, INT_TYPE)) {
         return INT_TYPE
       }
@@ -198,6 +204,28 @@ const checkSymType = (
         (isPointer(leftExprType) || isPointer(rightExprType))
       ) {
         return isPointer(leftExprType) ? leftExprType : rightExprType
+      }
+      throw new FatalTypeError(
+        {
+          start: {
+            line: 0,
+            column: 0
+          },
+          end: {
+            line: 0,
+            column: 0
+          }
+        },
+        `Binary operator'${sym}' cannot be applied on '${toString(leftExprType)}' and '${toString(
+          rightExprType
+        )}'`
+      )
+    case '-':
+      if (isSameType(leftExprType, INT_TYPE) && isSameType(rightExprType, INT_TYPE)) {
+        return INT_TYPE
+      }
+      if (isPointer(leftExprType) && isSameType(rightExprType, INT_TYPE)) {
+        return leftExprType
       }
       throw new FatalTypeError(
         {
@@ -286,7 +314,11 @@ const check = (node: Node | undefined, E: TypeEnvironment): TypeAssignment => {
     } = node
     const declaredType = getVariableType(typeString, pointer)
     const initializerType = check(initializer, E)
-    if (initializerType && !isSameType(declaredType, initializerType)) {
+    if (
+      initializerType &&
+      !(isPointer(declaredType) && isSameType(initializerType, VOID_POINTER_TYPE)) &&
+      !isSameType(declaredType, initializerType)
+    ) {
       throw new FatalTypeError(
         {
           start: {
@@ -467,8 +499,7 @@ const check = (node: Node | undefined, E: TypeEnvironment): TypeAssignment => {
   if (tag == 'FunctionApplication') {
     const { identifier, params } = node
     if (identifier in builtinObject) {
-      // TODO: add typechecking for builtin func
-      return
+      return builtinObject[identifier].type
     }
     const identifierType = checkIdentifierType(identifier, E)
     if (identifierType.tag == 'Variable') {
@@ -621,11 +652,31 @@ const check = (node: Node | undefined, E: TypeEnvironment): TypeAssignment => {
               column: 0
             }
           },
-          `Unary operator '${sym}' must be used on pointer type`
+          `Unary operator '${sym}' must be used on pointer types`
         )
       }
       exprType.type = exprType.type.substring(0, exprType.type.length - 1)
       return exprType
+    }
+    if (sym == '&') {
+      if (!isSameType(exprType, INT_TYPE)) {
+        throw new FatalTypeError(
+          {
+            start: {
+              line: 0,
+              column: 0
+            },
+            end: {
+              line: 0,
+              column: 0
+            }
+          },
+          `Unary operator '${sym}' must be used on addressable types`
+        )
+      }
+      const returnType = exprType as VariableTypeAssignment
+      returnType.type += '*'
+      return returnType
     }
   }
 
