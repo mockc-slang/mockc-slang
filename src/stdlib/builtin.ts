@@ -35,7 +35,7 @@ export const builtinObject = {
     arity: 1,
     func: (interpreterContext: InterpreterContext) => {
       const { memory } = interpreterContext
-      const size = popStash(interpreterContext, false)
+      const size = popStash(interpreterContext)
       return memory.allocateHeapMemory(size)
     },
     type: VOID_POINTER_TYPE

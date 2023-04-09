@@ -245,6 +245,7 @@ const checkSymType = (
     case '==':
     case '!=':
     case '*':
+    case '/':
     case '%':
     case '<':
     case '>':
@@ -665,7 +666,7 @@ const check = (node: Node | undefined, E: TypeEnvironment): TypeAssignment => {
       return exprType
     }
     if (sym == '&') {
-      if (!isSameType(exprType, INT_TYPE)) {
+      if (!isPointer(exprType) && !isSameType(exprType, INT_TYPE)) {
         throw new FatalTypeError(
           {
             start: {

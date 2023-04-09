@@ -18,7 +18,6 @@ import {
   ArgumentExpressionListContext,
   AssignmentExpressionContext,
   AssignmentOperatorContext,
-  CastExpressionContext,
   CompilationUnitContext,
   CompoundStatementContext,
   ConditionalExpressionContext,
@@ -383,34 +382,29 @@ class NodeGenerator implements MockCVisitor<Node> {
 
   visitMultiplicativeExpression(ctx: MultiplicativeExpressionContext): ExpressionNode {
     const multiplicativeExpression = ctx.multiplicativeExpression()?.accept(this) as ExpressionNode
-    const castExpression = ctx.castExpression()?.accept(this) as ExpressionNode
+    const unaryExpression = ctx.unaryExpression()?.accept(this) as ExpressionNode
 
     if (multiplicativeExpression) {
       return {
         tag: 'BinaryOpExpression',
         sym: ctx.getChild(1).text,
         leftExpr: multiplicativeExpression,
-        rightExpr: castExpression
+        rightExpr: unaryExpression
       }
     }
 
-    return castExpression
-  }
-
-  visitCastExpression(ctx: CastExpressionContext): ExpressionNode {
-    // TODO: Check for cast expression
-    return ctx.unaryExpression()?.accept(this) as ExpressionNode
+    return unaryExpression
   }
 
   visitUnaryExpression(ctx: UnaryExpressionContext): ExpressionNode {
     // TODO: Check for unary expression
     const unaryOperator = ctx.unaryOperator()
-    const castExpression = ctx.castExpression()?.accept(this) as ExpressionNode | undefined
-    if (unaryOperator && castExpression) {
+    const unaryExpression = ctx.unaryExpression()?.accept(this) as ExpressionNode | undefined
+    if (unaryOperator && unaryExpression) {
       return {
         tag: 'UnaryExpression',
         sym: unaryOperator.text,
-        expr: castExpression
+        expr: unaryExpression
       }
     }
     return ctx.postfixExpression()?.accept(this) as ExpressionNode
@@ -459,14 +453,6 @@ class NodeGenerator implements MockCVisitor<Node> {
       return {
         tag: 'Number',
         val: parseInt(number.text)
-      }
-    }
-
-    const characterLiteralNode = ctx.CHARACTER_LITERAL()
-    if (characterLiteralNode) {
-      return {
-        tag: 'CharacterLiteral',
-        val: characterLiteralNode.text
       }
     }
 

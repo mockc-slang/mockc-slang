@@ -8,12 +8,11 @@ externalDeclaration:
 	| ';'; // stray ;
 
 functionDefinition: typeSpecifier declarator compoundStatement;
-typeSpecifier: 'void' | 'char' | 'int' | 'char[]';
+typeSpecifier: 'void' | 'int';
 declarator: pointer? directDeclarator;
 pointer: '*' pointer?;
 directDeclarator:
 	IDENTIFIER
-	| IDENTIFIER '[' constantExpression? ']'
 	| IDENTIFIER '(' parameterList? ')';
 constantExpression: conditionalExpression;
 conditionalExpression:
@@ -53,32 +52,21 @@ additiveExpression:
 	| additiveExpression '+' multiplicativeExpression
 	| additiveExpression '-' multiplicativeExpression;
 multiplicativeExpression:
-	castExpression
-	| multiplicativeExpression '*' castExpression
-	| multiplicativeExpression '/' castExpression
-	| multiplicativeExpression '%' castExpression;
-castExpression:
 	unaryExpression
-	| '(' typeSpecifier ')' castExpression;
+	| multiplicativeExpression '*' unaryExpression
+	| multiplicativeExpression '/' unaryExpression
+	| multiplicativeExpression '%' unaryExpression;
 unaryExpression:
 	postfixExpression
-	| '++' unaryExpression
-	| '--' unaryExpression
-	| unaryOperator castExpression
-	| 'sizeof' unaryExpression
-	| 'sizeof' typeSpecifier;
+	| unaryOperator unaryExpression;
 postfixExpression:
 	primaryExpression
-	| postfixExpression '[' expressionList ']'
-	| postfixExpression '(' argumentExpressionList? ')'
-	| postfixExpression '++'
-	| postfixExpression '--';
+	| postfixExpression '(' argumentExpressionList? ')';
 argumentExpressionList:
 	assignmentExpression (',' assignmentExpression)*;
 primaryExpression:
 	IDENTIFIER
 	| STRING_LITERAL
-	| CHARACTER_LITERAL
 	| NUMBER
 	| '(' expressionList ')';
 expressionList:
@@ -87,26 +75,13 @@ assignmentExpression:
 	conditionalExpression
 	| unaryExpression assignmentOperator assignmentExpression;
 assignmentOperator:
-	'='
-	| '*='
-	| '/='
-	| '%='
-	| '+='
-	| '-='
-	| '<<='
-	| '>>='
-	| '&='
-	| '^='
-	| '|=';
-unaryOperator: '&' | '*' | '+' | '-' | '~' | '!';
+	'=';
+unaryOperator: '&' | '*';
 parameterList: parameterDeclaration (',' parameterDeclaration)*;
 parameterDeclaration: typeSpecifier declarator;
 declaration: typeSpecifier initDeclarator ';';
 initDeclarator: declarator ('=' initializer)?;
-initializer:
-	assignmentExpression
-	| '{' initializerList '}'
-	| '{' initializerList ',' '}';
+initializer: assignmentExpression;
 initializerList: initializer | initializerList ',' initializer;
 compoundStatement: '{' (declaration | statement)* '}';
 statement:

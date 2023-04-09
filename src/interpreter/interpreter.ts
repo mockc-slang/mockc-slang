@@ -296,7 +296,7 @@ const microcode = {
     const { exprs } = cmd as ReturnStatementNode
     agenda.push(resetInstruction)
     if (exprs.exprs.length > 0) {
-      agenda.push(derefStashValueInstruction)
+      agenda.push(derefStashValueInstruction) // return n
     }
     agenda.push(exprs)
   },
@@ -569,7 +569,8 @@ const microcode = {
   },
 
   Pop: (cmd: Command, interpreterContext: InterpreterContext) => {
-    popStash(interpreterContext)
+    const { stash } = interpreterContext
+    stash.pop() // hacky fix for void expression
   }
 }
 
@@ -591,6 +592,8 @@ function runInterpreter(context: Context, interpreterContext: InterpreterContext
     if (!microcode.hasOwnProperty(cmd.tag))
       throw new Error('internal error: unknown command ' + cmd.tag)
     microcode[cmd.tag](cmd, interpreterContext)
+    console.log(cmd)
+    console.log(stash)
     i++
   }
 
