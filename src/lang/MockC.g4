@@ -22,17 +22,8 @@ logicalOrExpression:
 	logicalAndExpression
 	| logicalOrExpression '||' logicalAndExpression;
 logicalAndExpression:
-	inclusiveOrExpression
-	| logicalAndExpression '&&' inclusiveOrExpression;
-inclusiveOrExpression:
-	exclusiveOrExpression
-	| inclusiveOrExpression '|' exclusiveOrExpression;
-exclusiveOrExpression:
-	andExpression
-	| exclusiveOrExpression '^' andExpression;
-andExpression:
 	equalityExpression
-	| andExpression '&' equalityExpression;
+	| logicalAndExpression '&&' equalityExpression;
 equalityExpression:
 	relationalExpression
 	| equalityExpression '==' relationalExpression
@@ -76,7 +67,7 @@ assignmentExpression:
 	| unaryExpression assignmentOperator assignmentExpression;
 assignmentOperator:
 	'=';
-unaryOperator: '&' | '*';
+unaryOperator: '&' | '*' | '!';
 parameterList: parameterDeclaration (',' parameterDeclaration)*;
 parameterDeclaration: typeSpecifier declarator;
 declaration: typeSpecifier initDeclarator ';';

@@ -1,5 +1,6 @@
 import { builtinObject } from '../stdlib/builtin'
 import { ClosureExpression, Command, Context, Value } from '../types'
+import { FatalRuntimeError } from './interpreter'
 import { Memory } from './memory'
 
 export type InterpreterContext = {
@@ -59,7 +60,7 @@ export const popStash = (interpreterContext: InterpreterContext, deref: boolean 
   const { stash } = interpreterContext
   const val = stash.pop()
   if (val == undefined) {
-    throw Error('internal error: expected value from stash')
+    throw new FatalRuntimeError('expected value from stash')
   }
   if (!deref) {
     return val
@@ -74,10 +75,10 @@ export const peekStash = (
 ) => {
   const { stash } = interpreterContext
   if (stash.length == 0) {
-    throw Error('internal error: expected value from stash')
+    throw new FatalRuntimeError('expected value from stash')
   }
   if (index >= stash.length) {
-    throw Error('internal error: peek index exceeds stash size')
+    throw new FatalRuntimeError('peek index exceeds stash size')
   }
   const val = stash[stash.length - index - 1]
   if (!deref) {
@@ -89,14 +90,14 @@ export const peekStash = (
 export const popAgenda = (agenda: Command[]) => {
   const val = agenda.pop()
   if (val == undefined) {
-    throw Error('internal error: expected value from agenda')
+    throw new FatalRuntimeError('expected value from agenda')
   }
   return val
 }
 
 export const peekAgenda = (agenda: Command[]) => {
   if (agenda.length == 0) {
-    throw Error('internal error: expected value from agenda')
+    throw new FatalRuntimeError('expected value from agenda')
   }
   return agenda[agenda.length - 1]
 }

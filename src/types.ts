@@ -409,6 +409,7 @@ export type Instruction =
   | LoadAddressInstruction
   | DerefStashValueInstruction
   | AddressInstruction
+  | UnaryOpInstruction
 
 export type DeclarationExpression = {
   tag: 'DeclarationExpression'
@@ -453,6 +454,11 @@ export type BranchInstruction = {
 
 export type BinaryOpInstruction = {
   tag: 'BinaryOpInstruction'
+  sym: string
+}
+
+export type UnaryOpInstruction = {
+  tag: 'UnaryOpInstruction'
   sym: string
 }
 

@@ -14,7 +14,6 @@ import * as es from 'estree'
 import { MockCLexer } from '../lang/MockCLexer'
 import {
   AdditiveExpressionContext,
-  AndExpressionContext,
   ArgumentExpressionListContext,
   AssignmentExpressionContext,
   AssignmentOperatorContext,
@@ -26,12 +25,10 @@ import {
   DeclaratorContext,
   DirectDeclaratorContext,
   EqualityExpressionContext,
-  ExclusiveOrExpressionContext,
   ExpressionListContext,
   ExpressionStatementContext,
   ExternalDeclarationContext,
   FunctionDefinitionContext,
-  InclusiveOrExpressionContext,
   InitDeclaratorContext,
   InitializerContext,
   InitializerListContext,
@@ -85,50 +82,6 @@ import {
   TranslationUnitNode,
   TypeSpecifierNode
 } from '../types'
-
-// export class DisallowedConstructError implements SourceError {
-//   public type = ErrorType.SYNTAX
-//   public severity = ErrorSeverity.ERROR
-//   public nodeType: string
-
-//   constructor(public node: es.Node) {
-//     this.nodeType = this.formatNodeType(this.node.type)
-//   }
-
-//   get location() {
-//     return this.node.loc!
-//   }
-
-//   public explain() {
-//     return `${this.nodeType} are not allowed`
-//   }
-
-//   public elaborate() {
-//     return stripIndent`
-//       You are trying to use ${this.nodeType}, which is not allowed (yet).
-//     `
-//   }
-
-//   /**
-//    * Converts estree node.type into english
-//    * e.g. ThisExpression -> 'this' expressions
-//    *      Property -> Properties
-//    *      EmptyStatement -> Empty Statements
-//    */
-//   private formatNodeType(nodeType: string) {
-//     switch (nodeType) {
-//       case 'ThisExpression':
-//         return "'this' expressions"
-//       case 'Property':
-//         return 'Properties'
-//       default: {
-//         const words = nodeType.split(/(?=[A-Z])/)
-//         return words.map((word, i) => (i === 0 ? word : word.toLowerCase())).join(' ') + 's'
-//       }
-//     }
-//   }
-// }
-
 export class FatalSyntaxError implements SourceError {
   public type = ErrorType.SYNTAX
   public severity = ErrorSeverity.ERROR
@@ -142,34 +95,6 @@ export class FatalSyntaxError implements SourceError {
     return 'There is a syntax error in your program'
   }
 }
-
-// export class MissingSemicolonError implements SourceError {
-//   public type = ErrorType.SYNTAX
-//   public severity = ErrorSeverity.ERROR
-//   public constructor(public location: es.SourceLocation) {}
-
-//   public explain() {
-//     return 'Missing semicolon at the end of statement'
-//   }
-
-//   public elaborate() {
-//     return 'Every statement must be terminated by a semicolon.'
-//   }
-// }
-
-// export class TrailingCommaError implements SourceError {
-//   public type: ErrorType.SYNTAX
-//   public severity: ErrorSeverity.WARNING
-//   public constructor(public location: es.SourceLocation) {}
-
-//   public explain() {
-//     return 'Trailing comma'
-//   }
-
-//   public elaborate() {
-//     return 'Please remove the trailing comma'
-//   }
-// }
 
 // function contextToLocation(ctx: ExpressionContext): es.SourceLocation {
 //   return {
@@ -305,27 +230,30 @@ class NodeGenerator implements MockCVisitor<Node> {
   }
 
   visitLogicalOrExpression(ctx: LogicalOrExpressionContext): ExpressionNode {
-    // TODO: Check for logical OR expression
+    const logicalOrExpression = ctx.logicalOrExpression()
+    const logicalAndExpression = ctx.logicalAndExpression()
+    if (logicalOrExpression) {
+      return {
+        tag: 'BinaryOpExpression',
+        sym: ctx.getChild(1).text,
+        leftExpr: logicalOrExpression.accept(this) as ExpressionNode,
+        rightExpr: logicalAndExpression.accept(this) as ExpressionNode
+      }
+    }
     return ctx.logicalAndExpression().accept(this) as ExpressionNode
   }
 
   visitLogicalAndExpression(ctx: LogicalAndExpressionContext): ExpressionNode {
-    // TODO: Check for logical AND expression
-    return ctx.inclusiveOrExpression().accept(this) as ExpressionNode
-  }
-
-  visitInclusiveOrExpression(ctx: InclusiveOrExpressionContext): ExpressionNode {
-    // TODO: Check for inclusive OR expression
-    return ctx.exclusiveOrExpression().accept(this) as ExpressionNode
-  }
-
-  visitExclusiveOrExpression(ctx: ExclusiveOrExpressionContext): ExpressionNode {
-    // TODO: Check for exclusive OR expression
-    return ctx.andExpression().accept(this) as ExpressionNode
-  }
-
-  visitAndExpression(ctx: AndExpressionContext): ExpressionNode {
-    // TODO: Check for AND expression
+    const logicalAndExpression = ctx.logicalAndExpression()
+    const equalityExpression = ctx.equalityExpression()
+    if (logicalAndExpression) {
+      return {
+        tag: 'BinaryOpExpression',
+        sym: ctx.getChild(1).text,
+        leftExpr: logicalAndExpression.accept(this) as ExpressionNode,
+        rightExpr: equalityExpression.accept(this) as ExpressionNode
+      }
+    }
     return ctx.equalityExpression().accept(this) as ExpressionNode
   }
 
@@ -698,11 +626,7 @@ export function parse(source: string, context: Context) {
       console.log(JSON.stringify(program, undefined, 2), 'final tree')
       checkTyping(program)
     } catch (error) {
-      if (error instanceof FatalSyntaxError || error instanceof FatalTypeError) {
-        context.errors.push(error)
-      } else {
-        throw error
-      }
+      context.errors.push(error)
     }
     const hasErrors = context.errors.find(m => m.severity === ErrorSeverity.ERROR)
     if (program && !hasErrors) {

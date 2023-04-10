@@ -1,7 +1,4 @@
-/* tslint:disable:max-classes-per-file */
-
-import { create } from 'domain'
-
+import { SourceLocation } from 'estree'
 import { RuntimeSourceError } from '../errors/runtimeSourceError'
 import {
   AddressInstruction,
@@ -21,6 +18,8 @@ import {
   DeclarationNode,
   DerefStashValueInstruction,
   EnvironmentRestoreInstruction,
+  ErrorSeverity,
+  ErrorType,
   ExpressionListNode,
   ExpressionStatementNode,
   ExternalDeclarationNode,
@@ -38,9 +37,11 @@ import {
   ResetInstruction,
   ReturnStatementNode,
   SelectionStatementNode,
+  SourceError,
   StringLiteralNode,
   TranslationUnitNode,
   UnaryExpressionNode,
+  UnaryOpInstruction,
   Value,
   WhileInstruction,
   WhileStatementNode
@@ -53,6 +54,25 @@ import {
   popStash,
   setUpInterpreterContext
 } from './interpreterContext'
+
+export class FatalRuntimeError implements SourceError {
+  public type = ErrorType.RUNTIME
+  public severity = ErrorSeverity.ERROR
+  public message: string
+  public location: SourceLocation
+
+  public constructor(message: string) {
+    this.message = message
+  }
+
+  public explain() {
+    return this.message
+  }
+
+  public elaborate() {
+    return this.explain()
+  }
+}
 
 const applyBuiltin = (builtinId: number, interpreterContext: InterpreterContext) => {
   const { builtinEnv, stash } = interpreterContext
@@ -108,7 +128,7 @@ const lookupVariable = (identifier: string, lookupEnv: string[][]) => {
   let valueIndex = -1
   while (valueIndex == -1) {
     if (frameIndex == 0) {
-      throw new Error(`undefined reference to ${identifier}`)
+      throw new FatalRuntimeError(`undefined reference to '${identifier}'`)
     }
     const frame = lookupEnv[--frameIndex]
     for (let i = 0; i < frame.length; i++) {
@@ -126,7 +146,12 @@ const applyBinaryOp = (
   leftOperand: Value,
   rightOperand: Value,
   interpreterContext: InterpreterContext
-): Value => binaryOpMicrocode[sym](leftOperand, rightOperand, interpreterContext)
+): Value => {
+  if (!binaryOpMicrocode[sym]) {
+    throw new FatalRuntimeError(`'${sym}' op not supported`)
+  }
+  return binaryOpMicrocode[sym](leftOperand, rightOperand, interpreterContext)
+}
 const popInstruction: PopInstruction = { tag: 'Pop' }
 const markInstruction: MarkInstruction = { tag: 'MarkInstruction' }
 const resetInstruction: ResetInstruction = { tag: 'ResetInstruction' }
@@ -174,7 +199,9 @@ const binaryOpMicrocode = {
   '<': (x: number, y: number) => (x < y ? 1 : 0),
   '>': (x: number, y: number) => (x > y ? 1 : 0),
   '<=': (x: number, y: number) => (x <= y ? 1 : 0),
-  '>=': (x: number, y: number) => (x >= y ? 1 : 0)
+  '>=': (x: number, y: number) => (x >= y ? 1 : 0),
+  '&&': (x: number, y: number) => (x && y ? 1 : 0),
+  '||': (x: number, y: number) => (x || y ? 1 : 0)
 }
 
 const microcode = {
@@ -493,10 +520,30 @@ const microcode = {
   UnaryExpression: (cmd: Command, interpreterContext: InterpreterContext) => {
     const { agenda } = interpreterContext
     const { sym, expr } = cmd as UnaryExpressionNode
-    if (sym == '*') {
-      agenda.push(derefStashValueInstruction, expr)
-    } else if (sym == '&') {
-      agenda.push(addressInstruction, expr)
+    agenda.push(
+      {
+        tag: 'UnaryOpInstruction',
+        sym
+      },
+      expr
+    )
+  },
+
+  UnaryOpInstruction: (cmd: Command, interpreterContext: InterpreterContext) => {
+    const { agenda, stash } = interpreterContext
+    const { sym } = cmd as UnaryOpInstruction
+    switch (sym) {
+      case '*':
+        agenda.push(derefStashValueInstruction)
+        break
+      case '&':
+        agenda.push(addressInstruction)
+        break
+      case '!':
+        stash.push(popStash(interpreterContext) ? 0 : 1)
+        break
+      default:
+        throw new FatalRuntimeError(`'${sym}' op not supported`)
     }
   },
 
@@ -581,32 +628,28 @@ function debugPrint(str: string, ctx: Context): void {
 function runInterpreter(context: Context, interpreterContext: InterpreterContext) {
   context.runtime.break = false
 
-  const step_limit = 1000000
+  const stepLimit = 1000000
 
-  const { stash, agenda, memory } = interpreterContext
+  const { stash, agenda } = interpreterContext
 
   let i = 0
-  while (i < step_limit) {
+  while (i < stepLimit) {
     const cmd = agenda.pop()
     if (!cmd) break
-    if (!microcode.hasOwnProperty(cmd.tag))
-      throw new Error('internal error: unknown command ' + cmd.tag)
-    microcode[cmd.tag](cmd, interpreterContext)
+    const { tag } = cmd
+    if (!microcode.hasOwnProperty(tag)) throw new FatalRuntimeError(`unknown command ${tag}`)
+    microcode[tag](cmd, interpreterContext)
     console.log(cmd)
     console.log(stash)
     i++
   }
 
-  if (i === step_limit) throw new Error('step limit ' + step_limit + ' exceeded')
-  if (stash.length > 1 || stash.length < 1)
-    throw new Error('internal error: stash must be singleton')
+  if (i === stepLimit) throw new FatalRuntimeError(`step limit ${stepLimit} exceeded`)
+  if (stash.length > 1 || stash.length < 1) throw new FatalRuntimeError('stash must be singleton')
   return popStash(interpreterContext)
 }
 
 export function* evaluate(node: Node, context: Context) {
-  // const result = yield* evaluators[node.type](node, context)
-  // yield* leave(context)
-  // return result
   try {
     context.runtime.isRunning = true
 
@@ -614,7 +657,7 @@ export function* evaluate(node: Node, context: Context) {
 
     return runInterpreter(context, interpreterContext)
   } catch (error) {
-    return error
+    context.errors.push(error)
   } finally {
     context.runtime.isRunning = false
   }

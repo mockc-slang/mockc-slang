@@ -167,7 +167,7 @@ const checkIdentifierType = (identifier: string, E: TypeEnvironment): Identifier
   )
 }
 
-const checkSymType = (
+const checkBinOpType = (
   sym: string,
   leftExprType: TypeAssignment,
   rightExprType: TypeAssignment
@@ -251,6 +251,8 @@ const checkSymType = (
     case '>':
     case '<=':
     case '>=':
+    case '||':
+    case '&&':
       if (
         isSameType(leftExprType, rightExprType) &&
         (isSameType(leftExprType, INT_TYPE) || isPointer(leftExprType))
@@ -271,6 +273,94 @@ const checkSymType = (
           rightExprType
         )}'`
       )
+    default:
+      throw new FatalTypeError(
+        {
+          start: {
+            line: 0,
+            column: 0
+          },
+          end: {
+            line: 0,
+            column: 0
+          }
+        },
+        `Type checking not supported for '${sym}'`
+      )
+  }
+}
+
+const checkUnaryOpType = (sym: string, exprType: TypeAssignment) => {
+  if (!exprType) {
+    throw new FatalTypeError(
+      {
+        start: {
+          line: 0,
+          column: 0
+        },
+        end: {
+          line: 0,
+          column: 0
+        }
+      },
+      `Unary operator '${sym}' cannot be applied on 'undefined' type`
+    )
+  }
+  switch (sym) {
+    case '*':
+      if (exprType.tag == 'Closure' || exprType.type[exprType.type.length - 1] != '*') {
+        throw new FatalTypeError(
+          {
+            start: {
+              line: 0,
+              column: 0
+            },
+            end: {
+              line: 0,
+              column: 0
+            }
+          },
+          `Unary operator '${sym}' must be used on pointer types`
+        )
+      }
+      exprType.type = exprType.type.substring(0, exprType.type.length - 1)
+      return exprType
+    case '&':
+      if (!isPointer(exprType) && !isSameType(exprType, INT_TYPE)) {
+        throw new FatalTypeError(
+          {
+            start: {
+              line: 0,
+              column: 0
+            },
+            end: {
+              line: 0,
+              column: 0
+            }
+          },
+          `Unary operator '${sym}' must be used on addressable types`
+        )
+      }
+      const returnType = exprType as VariableTypeAssignment
+      returnType.type += '*'
+      return returnType
+    case '!':
+      if (!isSameType(exprType, INT_TYPE)) {
+        throw new FatalTypeError(
+          {
+            start: {
+              line: 0,
+              column: 0
+            },
+            end: {
+              line: 0,
+              column: 0
+            }
+          },
+          `Unary operator '${sym}' must be used on 'int' type`
+        )
+      }
+      return INT_TYPE
     default:
       throw new FatalTypeError(
         {
@@ -355,7 +445,7 @@ const check = (node: Node | undefined, E: TypeEnvironment): TypeAssignment => {
     const { leftExpr, sym, rightExpr } = node
     const leftExprType = check(leftExpr, E)
     const rightExprType = check(rightExpr, E)
-    return checkSymType(sym, leftExprType, rightExprType)
+    return checkBinOpType(sym, leftExprType, rightExprType)
   }
 
   if (tag == 'ConditionalExpression') {
@@ -407,7 +497,7 @@ const check = (node: Node | undefined, E: TypeEnvironment): TypeAssignment => {
     const { sym, leftExpr, rightExpr } = node
     const leftExprType = check(leftExpr, E)
     const rightExprType = check(rightExpr, E)
-    return checkSymType(sym, leftExprType, rightExprType)
+    return checkBinOpType(sym, leftExprType, rightExprType)
   }
 
   if (tag == 'FunctionDefinition') {
@@ -630,61 +720,7 @@ const check = (node: Node | undefined, E: TypeEnvironment): TypeAssignment => {
   if (tag == 'UnaryExpression') {
     const { sym, expr } = node
     const exprType = check(expr, E)
-    if (!exprType) {
-      throw new FatalTypeError(
-        {
-          start: {
-            line: 0,
-            column: 0
-          },
-          end: {
-            line: 0,
-            column: 0
-          }
-        },
-        `Unary operator '${sym}' cannot be applied on 'undefined' type`
-      )
-    }
-
-    if (sym == '*') {
-      if (exprType.tag == 'Closure' || exprType.type[exprType.type.length - 1] != '*') {
-        throw new FatalTypeError(
-          {
-            start: {
-              line: 0,
-              column: 0
-            },
-            end: {
-              line: 0,
-              column: 0
-            }
-          },
-          `Unary operator '${sym}' must be used on pointer types`
-        )
-      }
-      exprType.type = exprType.type.substring(0, exprType.type.length - 1)
-      return exprType
-    }
-    if (sym == '&') {
-      if (!isPointer(exprType) && !isSameType(exprType, INT_TYPE)) {
-        throw new FatalTypeError(
-          {
-            start: {
-              line: 0,
-              column: 0
-            },
-            end: {
-              line: 0,
-              column: 0
-            }
-          },
-          `Unary operator '${sym}' must be used on addressable types`
-        )
-      }
-      const returnType = exprType as VariableTypeAssignment
-      returnType.type += '*'
-      return returnType
-    }
+    return checkUnaryOpType(sym, exprType)
   }
 
   if (tag == 'ReturnStatement') {

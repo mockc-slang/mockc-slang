@@ -67,7 +67,13 @@ export async function sourceRunner(
   //   return sourceRunner(code, context, options)
   // }
 
-  return runInterpreter(program, context, theOptions)
+  const res = runInterpreter(program, context, theOptions)
+
+  if (context.errors.length > 0) {
+    return resolvedErrorPromise
+  }
+
+  return res
 }
 
 export async function sourceFilesRunner(
