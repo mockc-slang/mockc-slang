@@ -29,15 +29,11 @@ equalityExpression:
 	| equalityExpression '==' relationalExpression
 	| equalityExpression '!=' relationalExpression;
 relationalExpression:
-	shiftExpression
-	| relationalExpression '<' shiftExpression
-	| relationalExpression '>' shiftExpression
-	| relationalExpression '<=' shiftExpression
-	| relationalExpression '>=' shiftExpression;
-shiftExpression:
 	additiveExpression
-	| shiftExpression '<<' additiveExpression
-	| shiftExpression '>>' additiveExpression;
+	| relationalExpression '<' additiveExpression
+	| relationalExpression '>' additiveExpression
+	| relationalExpression '<=' additiveExpression
+	| relationalExpression '>=' additiveExpression;
 additiveExpression:
 	multiplicativeExpression
 	| additiveExpression '+' multiplicativeExpression

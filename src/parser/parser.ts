@@ -45,7 +45,6 @@ import {
   PrimaryExpressionContext,
   RelationalExpressionContext,
   SelectionStatementContext,
-  ShiftExpressionContext,
   StatementContext,
   TranslationUnitContext,
   TypeSpecifierContext,
@@ -53,7 +52,7 @@ import {
   UnaryOperatorContext
 } from '../lang/MockCParser'
 import { MockCVisitor } from '../lang/MockCVisitor'
-import { checkTyping, FatalTypeError } from '../typechecker/typechecker'
+import { checkTyping } from '../typechecker/typechecker'
 import {
   CompilationUnitNode,
   CompoundStatementNode,
@@ -274,21 +273,16 @@ class NodeGenerator implements MockCVisitor<Node> {
 
   visitRelationalExpression(ctx: RelationalExpressionContext): ExpressionNode {
     const relationalExpression = ctx.relationalExpression()?.accept(this) as ExpressionNode
-    const shiftExpression = ctx.shiftExpression()?.accept(this) as ExpressionNode
+    const additiveExpression = ctx.additiveExpression()?.accept(this) as ExpressionNode
     if (relationalExpression) {
       return {
         tag: 'BinaryOpExpression',
         sym: ctx.getChild(1).text,
         leftExpr: relationalExpression,
-        rightExpr: shiftExpression
+        rightExpr: additiveExpression
       }
     }
-    return shiftExpression
-  }
-
-  visitShiftExpression(ctx: ShiftExpressionContext): ExpressionNode {
-    // TODO: Check for shift expression
-    return ctx.additiveExpression().accept(this) as ExpressionNode
+    return additiveExpression
   }
 
   visitAdditiveExpression(ctx: AdditiveExpressionContext): ExpressionNode {
