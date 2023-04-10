@@ -305,9 +305,7 @@ export class Memory {
   }
 
   wordToCValue(x: number): string {
-    return isNaN(x)
-      ? Memory.wordToString(x)
-      : this.isUndefined(x)
+    return this.isUndefined(x)
       ? '<undefined>'
       : this.isUnassigned(x)
       ? '<unassigned>'
@@ -315,10 +313,14 @@ export class Memory {
       ? 'NULL'
       : this.isAddress(x)
       ? String(this.wordToCValue(this.addressDeref(x)))
+      : this.isRawAddress(x)
+      ? String(this.getIndexFromAddress(x))
       : this.isClosure(x)
       ? '<closure>'
       : this.isBuiltin(x)
       ? '<builtin>'
+      : isNaN(x)
+      ? Memory.wordToString(x)
       : String(x)
   }
 
