@@ -1,0 +1,982 @@
+{
+    "blank": {
+        "title": "blank",
+        "description": "<div><h4>blank</h4><div class=\"description\">\n    primitive Rune in the rune of a blank square\n</div></div>",
+        "meta": "const"
+    },
+    "circle": {
+        "title": "circle",
+        "description": "<div><h4>circle</h4><div class=\"description\">\n    primitive Rune in the rune of a circle\n</div></div>",
+        "meta": "const"
+    },
+    "corner": {
+        "title": "corner",
+        "description": "<div><h4>corner</h4><div class=\"description\">\n    primitive Rune with black triangle,\nfilling upper right corner\n</div></div>",
+        "meta": "const"
+    },
+    "heart": {
+        "title": "heart",
+        "description": "<div><h4>heart</h4><div class=\"description\">\n    primitive Rune in the rune of a heart\n</div></div>",
+        "meta": "const"
+    },
+    "nova": {
+        "title": "nova",
+        "description": "<div><h4>nova</h4><div class=\"description\">\n    primitive Rune in the rune of two overlapping\ntriangles, residing in the upper half\nof\n</div></div>",
+        "meta": "const"
+    },
+    "pentagram": {
+        "title": "pentagram",
+        "description": "<div><h4>pentagram</h4><div class=\"description\">\n    primitive Rune in the rune of a pentagram\n</div></div>",
+        "meta": "const"
+    },
+    "rcross": {
+        "title": "rcross",
+        "description": "<div><h4>rcross</h4><div class=\"description\">\n    primitive Rune in the rune of a \nsmallsquare inside a large square,\neach diagonally split into a\nblack and white half\n</div></div>",
+        "meta": "const"
+    },
+    "ribbon": {
+        "title": "ribbon",
+        "description": "<div><h4>ribbon</h4><div class=\"description\">\n    primitive Rune in the rune of a ribbon\nwinding outwards in an anticlockwise spiral\n</div></div>",
+        "meta": "const"
+    },
+    "sail": {
+        "title": "sail",
+        "description": "<div><h4>sail</h4><div class=\"description\">\n    primitive Rune in the rune of a sail\n</div></div>",
+        "meta": "const"
+    },
+    "square": {
+        "title": "square",
+        "description": "<div><h4>square</h4><div class=\"description\">\n    primitive Rune in the rune of a full square\n</div></div>",
+        "meta": "const"
+    },
+    "add": {
+        "title": "add(obj)",
+        "description": "<div><h4>add(obj)</h4><div class=\"description\">\n    Add the object to the scene. Only objects added to the scene\nwill appear.\n</div></div>",
+        "meta": "func"
+    },
+    "add_keyboard_listener": {
+        "title": "add_keyboard_listener(key, event, callback) → {Phaser.Input.Keyboard.Key}",
+        "description": "<div><h4>add_keyboard_listener(key, event, callback) → {Phaser.Input.Keyboard.Key}</h4><div class=\"description\">\n    Attach a listener to the object. The callback will be executed\nwhen the event is emitted.\nMutate the object.\n\nFor all available events, see:\nhttps://photonstorm.github.io/phaser3-docs/Phaser.Input.Events.html\n\nFor list of keycodes, see:\nhttps://github.com/photonstorm/phaser/blob/v3.22.0/src/input/keyboard/keys/KeyCodes.js\n</div></div>",
+        "meta": "func"
+    },
+    "add_listener": {
+        "title": "add_listener(obj, event, callback) → {Phaser.Input.InputPlugin}",
+        "description": "<div><h4>add_listener(obj, event, callback) → {Phaser.Input.InputPlugin}</h4><div class=\"description\">\n    Attach a listener to the object. The callback will be executed\nwhen the event is emitted.\nMutate the object.\n\nFor all available events, see:\nhttps://photonstorm.github.io/phaser3-docs/Phaser.Input.Events.html\n</div></div>",
+        "meta": "func"
+    },
+    "add_to_container": {
+        "title": "add_to_container(container, objs) → {Phaser.GameObject.Container}",
+        "description": "<div><h4>add_to_container(container, objs) → {Phaser.GameObject.Container}</h4><div class=\"description\">\n    Add the given game object to the container.\nMutates the container.\n</div></div>",
+        "meta": "func"
+    },
+    "add_tween": {
+        "title": "(async) add_tween(obj, config) → {Phaser.GameObjects.GameObject}",
+        "description": "<div><h4>(async) add_tween(obj, config) → {Phaser.GameObjects.GameObject}</h4><div class=\"description\">\n    Create a tween to the object and plays it.\nMutate the object.\n</div></div>",
+        "meta": "func"
+    },
+    "adsr": {
+        "title": "adsr(attack_ratio, decay_ratio, sustain_level, release_ratio) → {function}",
+        "description": "<div><h4>adsr(attack_ratio, decay_ratio, sustain_level, release_ratio) → {function}</h4><div class=\"description\">\n    Returns an envelope: a function from Sound to Sound.\nWhen the envelope is applied to a Sound, it returns\na new Sound that results from applying ADSR to\nthe given Sound. The Attack, Sustain and\nRelease ratios are given in the first, second and fourth\narguments, and the Sustain level is given in \nthe third argument as a fraction between 0 and 1.\n</div></div>",
+        "meta": "func"
+    },
+    "alpha_of": {
+        "title": "alpha_of(px) → {Number}",
+        "description": "<div><h4>alpha_of(px) → {Number}</h4><div class=\"description\">\n    Returns the alpha component of a given Pixel <code>px</code>\n</div></div>",
+        "meta": "func"
+    },
+    "anaglyph": {
+        "title": "anaglyph(rune) → {Picture}",
+        "description": "<div><h4>anaglyph(rune) → {Picture}</h4><div class=\"description\">\n    turns a given Rune into an anaglyph Picture\n</div></div>",
+        "meta": "func"
+    },
+    "arc": {
+        "title": "arc(t) → {Point}",
+        "description": "<div><h4>arc(t) → {Point}</h4><div class=\"description\">\n    this function is a curve: a function from a\nfraction t to a point. The points lie on the\nright half of the unit circle. They start at Point (0,1) when\nt is 0. When t is 0.5, they reach Point (1,0),\nwhen t is 1, they reach Point (0, -1).\n</div></div>",
+        "meta": "func"
+    },
+    "b_of": {
+        "title": "b_of(p) → {Number}",
+        "description": "<div><h4>b_of(p) → {Number}</h4><div class=\"description\">\n    retrieves the blue component of a given Point\n</div></div>",
+        "meta": "func"
+    },
+    "bell": {
+        "title": "bell(note, duration) → {Sound}",
+        "description": "<div><h4>bell(note, duration) → {Sound}</h4><div class=\"description\">\n    returns a Sound that is reminiscent of a bell, playing\na given note for a given <code>duration</code> of seconds\n</div></div>",
+        "meta": "func"
+    },
+    "beside": {
+        "title": "beside(rune1, rune2) → {Rune}",
+        "description": "<div><h4>beside(rune1, rune2) → {Rune}</h4><div class=\"description\">\n    makes a new Rune from two given Runes by\nplacing the first on the left of the second,\nboth occupying equal portions of the width \nof the result\n</div></div>",
+        "meta": "func"
+    },
+    "beside_frac": {
+        "title": "beside_frac(frac, rune1, rune2) → {Rune}",
+        "description": "<div><h4>beside_frac(frac, rune1, rune2) → {Rune}</h4><div class=\"description\">\n    makes a new Rune from two given Runes by\nplacing the first on the left of the second\nsuch that the first one occupies frac \nportion of the width of the result and \nthe second the rest\n</div></div>",
+        "meta": "func"
+    },
+    "black": {
+        "title": "black(rune) → {Rune}",
+        "description": "<div><h4>black(rune) → {Rune}</h4><div class=\"description\">\n    colors the given rune black.\n</div></div>",
+        "meta": "func"
+    },
+    "blue": {
+        "title": "blue(rune) → {Rune}",
+        "description": "<div><h4>blue(rune) → {Rune}</h4><div class=\"description\">\n    colors the given rune blue.\n</div></div>",
+        "meta": "func"
+    },
+    "blue_of": {
+        "title": "blue_of(px) → {Number}",
+        "description": "<div><h4>blue_of(px) → {Number}</h4><div class=\"description\">\n    Returns the blue component of a given Pixel <code>px</code>\n</div></div>",
+        "meta": "func"
+    },
+    "brown": {
+        "title": "brown(rune) → {Rune}",
+        "description": "<div><h4>brown(rune) → {Rune}</h4><div class=\"description\">\n    colors the given rune brown.\n</div></div>",
+        "meta": "func"
+    },
+    "cello": {
+        "title": "cello(note, duration) → {Sound}",
+        "description": "<div><h4>cello(note, duration) → {Sound}</h4><div class=\"description\">\n    returns a Sound that is reminiscent of a cello, playing\na given note for a given <code>duration</code> of seconds\n</div></div>",
+        "meta": "func"
+    },
+    "color": {
+        "title": "color(rune, r, g, b) → {Rune}",
+        "description": "<div><h4>color(rune, r, g, b) → {Rune}</h4><div class=\"description\">\n    adds color to rune by specifying \nthe red, green, blue (RGB) value, ranging from 0.0 to 1.0.\nRGB is additive: if all values are 1, the color is white,\nand if all values are 0, the color is black.\n</div></div>",
+        "meta": "func"
+    },
+    "connect_ends": {
+        "title": "connect_ends(curve1, curve2) → {Curve}",
+        "description": "<div><h4>connect_ends(curve1, curve2) → {Curve}</h4><div class=\"description\">\n    this function is a binary Curve operator: It\ntakes two Curves as arguments and returns\na new Curve. The two Curves are combined\nby using the full first Curve for the first portion\nof the result and by using the full second Curve for the second\nportion of the result.\nThe second Curve is translated such that its point\nat fraction 0 is the same as the Point of the first\nCurve at fraction 1.\n</div></div>",
+        "meta": "func"
+    },
+    "connect_rigidly": {
+        "title": "connect_rigidly(curve1, curve2) → {Curve}",
+        "description": "<div><h4>connect_rigidly(curve1, curve2) → {Curve}</h4><div class=\"description\">\n    this function is a binary Curve operator: It\ntakes two Curves as arguments and returns\na new Curve. The two Curves are combined\nby using the full first Curve for the first portion\nof the result and by using the full second Curve for the \nsecond portion of the result.\nThe second Curve is not changed, and therefore\nthere might be a big jump in the middle of the\nresult Curve.\n</div></div>",
+        "meta": "func"
+    },
+    "consecutively": {
+        "title": "consecutively(sounds) → {Sound}",
+        "description": "<div><h4>consecutively(sounds) → {Sound}</h4><div class=\"description\">\n    makes a new sound by combining the sounds in a given\nlist so that\nthey are arranged consecutively. Let us say the durations\nof the sounds are <code>d1</code>, ..., <code>dn</code> and the wave \nfunctions are <code>w1</code>, ..., <code>wn</code>. Then the resulting\nsound has the duration of the sum of <code>d1</code>, ..., <code>dn</code>.\nThe wave function <code>w</code> of the resulting sound uses <code>w1</code> for the first\n<code>d1</code> seconds, <code>w2</code> for the next \n<code>d2</code> seconds etc. We specify that <code>w(d1) = w2(0)</code>,\n<code>w(d1+d2) = w3(0)</code>, etc\n</div></div>",
+        "meta": "func"
+    },
+    "copy_image": {
+        "title": "copy_image(src, dst) → {undefined}",
+        "description": "<div><h4>copy_image(src, dst) → {undefined}</h4><div class=\"description\">\n    Filter that copies all Pixels faithfully from the\nsource Image <code>src</code> to the destination Image <code>dst</code>\n</div></div>",
+        "meta": "func"
+    },
+    "create_anim": {
+        "title": "create_anim(anim_config) → {boolean}",
+        "description": "<div><h4>create_anim(anim_config) → {boolean}</h4><div class=\"description\">\n    Create a new animation and add it to the available animations.\nAnimations are global i.e. once created, it can be used anytime, anywhere.\n\nNOTE: Anims DO NOT need to be added into the scene to be used.\nIt is automatically added to the scene when it is created.\n\nWIll return true if the animation key is valid\n(key is specified within the anim_config); false if the key\nis already in use.\n</div></div>",
+        "meta": "func"
+    },
+    "create_anim_config": {
+        "title": "create_anim_config(anims_key, anim_frames, frame_rate, duration, repeat, yoyo, show_on_start, hide_on_complete) → {config}",
+        "description": "<div><h4>create_anim_config(anims_key, anim_frames, frame_rate, duration, repeat, yoyo, show_on_start, hide_on_complete) → {config}</h4><div class=\"description\">\n    Create anims config, can be used to configure anims\n\nFor more details about the config object, see:\nhttps://photonstorm.github.io/phaser3-docs/Phaser.Types.Animations.html#.Animation\n</div></div>",
+        "meta": "func"
+    },
+    "create_anim_frame_config": {
+        "title": "create_anim_frame_config(key, frame, duration, visible) → {config}",
+        "description": "<div><h4>create_anim_frame_config(key, frame, duration, visible) → {config}</h4><div class=\"description\">\n    Create animation frame config, can be used to configure a specific frame\nwithin an animation.\n\nThe key should refer to an image that is already loaded.\nTo make frame_config from spritesheet based on its frames,\nuse create_anim_spritesheet_frame_configs instead.\n</div></div>",
+        "meta": "func"
+    },
+    "create_anim_spritesheet_frame_configs": {
+        "title": "create_anim_spritesheet_frame_configs(key) → {list_of_configs}",
+        "description": "<div><h4>create_anim_spritesheet_frame_configs(key) → {list_of_configs}</h4><div class=\"description\">\n    Create list of animation frame config, can be used directly as part of \nanim_config's `frames` parameter.\n\nThis function will generate list of frame configs based on the \nspritesheet_config attached to the associated spritesheet.\nThis function requires that the given key is a spritesheet key\ni.e. a key associated with loaded spritesheet, loaded in using\nload_spritesheet function.\n\nWill return empty frame configs if key is not associated with\na spritesheet.\n</div></div>",
+        "meta": "func"
+    },
+    "create_award": {
+        "title": "create_award(x, y, award_key) → {Phaser.GameObject.Sprite}",
+        "description": "<div><h4>create_award(x, y, award_key) → {Phaser.GameObject.Sprite}</h4><div class=\"description\">\n    Create an award using the key associated with the award.\nThe award key can be obtained from the Awards Hall or\nAwards menu, after attaining the award.\n\nValid award will have an on-hover VERIFIED tag to distinguish\nit from images created by create_image.\n\nIf student does not possess the award, this function will\nreturn a untagged, default image.\n</div></div>",
+        "meta": "func"
+    },
+    "create_config": {
+        "title": "create_config(lst) → {config}",
+        "description": "<div><h4>create_config(lst) → {config}</h4><div class=\"description\">\n    Transforms the given list into config object. The list follows\nthe format of list([key1, value1], [key2, value2]).\n\ne.g list([\"alpha\", 0], [\"duration\", 1000])\n</div></div>",
+        "meta": "func"
+    },
+    "create_container": {
+        "title": "create_container(x, y) → {Phaser.GameObjects.Container}",
+        "description": "<div><h4>create_container(x, y) → {Phaser.GameObjects.Container}</h4><div class=\"description\">\n    Create a container object. Container is able to contain any other game object,\nand the positions of contained game object will be relative to the container.\n\nRendering the container as visible or invisible will also affect the contained\ngame object.\n\nContainer can also contain another container.\n\n0, 0 is located at the top, left hand side.\n\nFor more details about container object, see:\nhttps://photonstorm.github.io/phaser3-docs/Phaser.GameObjects.Container.html\n</div></div>",
+        "meta": "func"
+    },
+    "create_ellipse": {
+        "title": "create_ellipse(x, y, width, height, fill, alpha) → {Phaser.GameObjects.Ellipse}",
+        "description": "<div><h4>create_ellipse(x, y, width, height, fill, alpha) → {Phaser.GameObjects.Ellipse}</h4><div class=\"description\">\n    Create an ellipse object.\n</div></div>",
+        "meta": "func"
+    },
+    "create_image": {
+        "title": "create_image(x, y, asset_key) → {Phaser.GameObjects.Sprite}",
+        "description": "<div><h4>create_image(x, y, asset_key) → {Phaser.GameObjects.Sprite}</h4><div class=\"description\">\n    Create an image using the key associated with a loaded image.\nIf key is not associated with any loaded image, throws error.\n\n0, 0 is located at the top, left hand side.\n</div></div>",
+        "meta": "func"
+    },
+    "create_interactive_config": {
+        "title": "create_interactive_config(draggable, use_hand_cursor, pixel_perfect, alpha_tolerance) → {config}",
+        "description": "<div><h4>create_interactive_config(draggable, use_hand_cursor, pixel_perfect, alpha_tolerance) → {config}</h4><div class=\"description\">\n    Create interactive config object, can be used to configure interactive settings.\n\nFor more details about interactive config object, see:\nhttps://photonstorm.github.io/phaser3-docs/Phaser.Types.Input.html#.InputConfiguration\n</div></div>",
+        "meta": "func"
+    },
+    "create_rect": {
+        "title": "create_rect(x, y, width, height, fill, alpha) → {Phaser.GameObjects.Rectangle}",
+        "description": "<div><h4>create_rect(x, y, width, height, fill, alpha) → {Phaser.GameObjects.Rectangle}</h4><div class=\"description\">\n    Create a rectangle object.\n\n0, 0 is located at the top, left hand side.\n</div></div>",
+        "meta": "func"
+    },
+    "create_sound_config": {
+        "title": "create_sound_config(mute, volume, rate, detune, seek, loop, delay) → {config}",
+        "description": "<div><h4>create_sound_config(mute, volume, rate, detune, seek, loop, delay) → {config}</h4><div class=\"description\">\n    Create sound config object, can be used to configure sound settings.\n\nFor more details about sound config object, see:\nhttps://photonstorm.github.io/phaser3-docs/Phaser.Types.Sound.html#.SoundConfig\n</div></div>",
+        "meta": "func"
+    },
+    "create_spritesheet_config": {
+        "title": "create_spritesheet_config(frame_width, frame_height, start_frame, margin, spacing) → {config}",
+        "description": "<div><h4>create_spritesheet_config(frame_width, frame_height, start_frame, margin, spacing) → {config}</h4><div class=\"description\">\n    Create spritesheet config, can be used to configure the frames within the\nspritesheet. Can be used as config at load_spritesheet.\n</div></div>",
+        "meta": "func"
+    },
+    "create_text": {
+        "title": "create_text(x, y, text, config) → {Phaser.GameObjects.Text}",
+        "description": "<div><h4>create_text(x, y, text, config) → {Phaser.GameObjects.Text}</h4><div class=\"description\">\n    Create a text object.\n\n0, 0 is located at the top, left hand side.\n</div></div>",
+        "meta": "func"
+    },
+    "create_text_config": {
+        "title": "create_text_config(font_family, font_size, color, stroke, stroke_thickness, align) → {config}",
+        "description": "<div><h4>create_text_config(font_family, font_size, color, stroke, stroke_thickness, align) → {config}</h4><div class=\"description\">\n    Create text config object, can be used to stylise text object.\n\nfont_family: for available font_family, see:\nhttps://developer.mozilla.org/en-US/docs/Web/CSS/font-family#Valid_family_names\n\nalign: must be either 'left', 'right', 'center', or 'justify'\n\nFor more details about text config, see:\nhttps://photonstorm.github.io/phaser3-docs/Phaser.Types.GameObjects.Text.html#.TextStyle\n</div></div>",
+        "meta": "func"
+    },
+    "create_tween_config": {
+        "title": "create_tween_config(target_prop, target_value, delay, duration, ease, on_complete, yoyo, loop, loop_delay, on_loop) → {config}",
+        "description": "<div><h4>create_tween_config(target_prop, target_value, delay, duration, ease, on_complete, yoyo, loop, loop_delay, on_loop) → {config}</h4><div class=\"description\">\n    Create tween config object, can be used to configure tween settings.\n\nFor more details about tween config object, see:\nhttps://photonstorm.github.io/phaser3-docs/Phaser.Types.Tweens.html#.TweenBuilderConfig\n</div></div>",
+        "meta": "func"
+    },
+    "destroy_obj": {
+        "title": "destroy_obj(obj)",
+        "description": "<div><h4>destroy_obj(obj)</h4><div class=\"description\">\n    Destroy the given game object. Destroyed game object\nis removed from the scene, and all of its listeners\nis also removed.\n</div></div>",
+        "meta": "func"
+    },
+    "draw_3D_connected": {
+        "title": "draw_3D_connected(num) → {function}",
+        "description": "<div><h4>draw_3D_connected(num) → {function}</h4><div class=\"description\">\n    returns a function that turns a given 3D Curve into a Drawing, \nby sampling the 3D Curve at <code>num</code> sample points \nand connecting each pair with a line. \nWhen a program evaluates to a Drawing, the Source system \ndisplays it graphically, in a window, instead of textually. \nThe parts between (0,0,0) and (1,1,1) of the resulting \nDrawing are shown within the unit cube.\n</div></div>",
+        "meta": "func"
+    },
+    "draw_3D_connected_full_view": {
+        "title": "draw_3D_connected_full_view(num) → {function}",
+        "description": "<div><h4>draw_3D_connected_full_view(num) → {function}</h4><div class=\"description\">\n    returns a function that turns a given 3D Curve into a Drawing, \nby sampling the 3D Curve at <code>num</code> sample points \nand connecting each pair with a line. \nWhen a program evaluates to a Drawing, the Source system \ndisplays it graphically, in a window, instead of textually. \nThe Drawing is stretched or shrunk \nto show the full curve \nand maximize its width, height and depth within the cube.\n</div></div>",
+        "meta": "func"
+    },
+    "draw_3D_connected_full_view_proportional": {
+        "title": "draw_3D_connected_full_view_proportional(num) → {function}",
+        "description": "<div><h4>draw_3D_connected_full_view_proportional(num) → {function}</h4><div class=\"description\">\n    returns a function that turns a given 3D Curve into a Drawing, \nby sampling the 3D Curve at <code>num</code> sample points \nand connecting each pair with a line. \nWhen a program evaluates to a Drawing, the Source system \ndisplays it graphically, in a window, instead of textually. \nThe Drawing is scaled proportionally with its size maximized \nto fit entirely inside the cube.\n</div></div>",
+        "meta": "func"
+    },
+    "draw_3D_points_full_view_proportional": {
+        "title": "draw_3D_points_full_view_proportional(num) → {function}",
+        "description": "<div><h4>draw_3D_points_full_view_proportional(num) → {function}</h4><div class=\"description\">\n    returns a function that turns a given 3D Curve into a Drawing, \nby sampling the 3D Curve at <code>num</code> sample points. \nThe Drawing consists of isolated points, and does not connect them. \nWhen a program evaluates to a Drawing, the Source system \ndisplays it graphically, in a window, instead of textually. \nThe Drawing is scaled proportionally with its size maximized \nto fit entirely inside the cube.\n</div></div>",
+        "meta": "func"
+    },
+    "draw_3D_points_on": {
+        "title": "draw_3D_points_on(num) → {function}",
+        "description": "<div><h4>draw_3D_points_on(num) → {function}</h4><div class=\"description\">\n    returns a function that turns a given 3D Curve into a Drawing, \nby sampling the 3D Curve at <code>num</code> sample points. \nThe Drawing consists of isolated points, and does not connect them. \nWhen a program evaluates to a Drawing, the Source system \ndisplays it graphically, in a window, instead of textually. \nThe parts between (0,0,0) and (1,1,1) of the resulting \nDrawing are shown within the unit cube.\n</div></div>",
+        "meta": "func"
+    },
+    "draw_connected": {
+        "title": "draw_connected(num) → {function}",
+        "description": "<div><h4>draw_connected(num) → {function}</h4><div class=\"description\">\n    returns a function that turns a given Curve into a Drawing, \nby sampling the Curve at <code>num</code> sample points \nand connecting each pair with a line. \nWhen a program evaluates to a Drawing, the Source system\ndisplays it graphically, in a window, instead of textually.\nThe parts between (0,0) and (1,1) of the resulting Drawing \nare shown in the window.\n</div></div>",
+        "meta": "func"
+    },
+    "draw_connected_full_view": {
+        "title": "draw_connected_full_view(num) → {function}",
+        "description": "<div><h4>draw_connected_full_view(num) → {function}</h4><div class=\"description\">\n    returns a function that turns a given Curve into a Drawing, \nby sampling the Curve at <code>num</code> sample points \nand connecting each pair with a line. \nWhen a program evaluates to a Drawing, the Source system\ndisplays it graphically, in a window, instead of textually.\nThe Drawing is stretched or shrunk\nto show the full curve\nand maximize its width and height, with some padding.\n</div></div>",
+        "meta": "func"
+    },
+    "draw_connected_full_view_proportional": {
+        "title": "draw_connected_full_view_proportional(num) → {function}",
+        "description": "<div><h4>draw_connected_full_view_proportional(num) → {function}</h4><div class=\"description\">\n    returns a function that turns a given Curve into a Drawing, \nby sampling the Curve at <code>num</code> sample points \nand connecting each pair with a line. \nWhen a program evaluates to a Drawing, the Source system\ndisplays it graphically, in a window, instead of textually.\nThe Drawing is scaled proportionally to show the full curve\nand maximize its size, with some padding.\n</div></div>",
+        "meta": "func"
+    },
+    "draw_points_full_view_proportional": {
+        "title": "draw_points_full_view_proportional(num) → {function}",
+        "description": "<div><h4>draw_points_full_view_proportional(num) → {function}</h4><div class=\"description\">\n    returns a function that turns a given Curve into a Drawing, \nby sampling the Curve at <code>num</code> sample points.\nThe Drawing consists of isolated points, and does not connect them.\nWhen a program evaluates to a Drawing, the Source system\ndisplays it graphically, in a window, instead of textually.\nThe Drawing is scaled proportionally with its size maximized \nto fit entirely inside the window, with some padding.\n</div></div>",
+        "meta": "func"
+    },
+    "draw_points_on": {
+        "title": "draw_points_on(num) → {function}",
+        "description": "<div><h4>draw_points_on(num) → {function}</h4><div class=\"description\">\n    returns a function that turns a given Curve into a Drawing, \nby sampling the Curve at <code>num</code> sample points.\nThe Drawing consists of isolated points, and does not connect them.\nWhen a program evaluates to a Drawing, the Source system\ndisplays it graphically, in a window, instead of textually.\nThe parts between (0,0) and (1,1) of the resulting Drawing \nare shown in the window.\n</div></div>",
+        "meta": "func"
+    },
+    "ev3_ambientLightIntensity": {
+        "title": "ev3_ambientLightIntensity(colorSensor) → {number}",
+        "description": "<div><h4>ev3_ambientLightIntensity(colorSensor) → {number}</h4><div class=\"description\">\n    Gets the ambient light intensity seen by the colour sensor.\n</div></div>",
+        "meta": "func"
+    },
+    "ev3_colorSensor": {
+        "title": "ev3_colorSensor() → {peripheral}",
+        "description": "<div><h4>ev3_colorSensor() → {peripheral}</h4><div class=\"description\">\n    Gets the colour sensor connected any of ports 1, 2, 3 or 4.\n</div></div>",
+        "meta": "func"
+    },
+    "ev3_colorSensorBlue": {
+        "title": "ev3_colorSensorBlue(colorSensor) → {number}",
+        "description": "<div><h4>ev3_colorSensorBlue(colorSensor) → {number}</h4><div class=\"description\">\n    Gets the amount of blue seen by the colour sensor.\n</div></div>",
+        "meta": "func"
+    },
+    "ev3_colorSensorGetColor": {
+        "title": "ev3_colorSensorGetColor(colorSensor) → {number}",
+        "description": "<div><h4>ev3_colorSensorGetColor(colorSensor) → {number}</h4><div class=\"description\">\n    Gets the colour as seen by the colour sensor.\n\nPossible colour return values are:\n<ul><li>0 none</li>\n<li>1 black</li>\n<li>2 blue</li>\n<li>3 green</li>\n<li>4 yellow</li>\n<li>5 red</li>\n<li>6 white</li>\n<li>7 brown</li></ul>\n</div></div>",
+        "meta": "func"
+    },
+    "ev3_colorSensorGreen": {
+        "title": "ev3_colorSensorGreen(colorSensor) → {number}",
+        "description": "<div><h4>ev3_colorSensorGreen(colorSensor) → {number}</h4><div class=\"description\">\n    Gets the amount of green seen by the colour sensor.\n</div></div>",
+        "meta": "func"
+    },
+    "ev3_colorSensorRed": {
+        "title": "ev3_colorSensorRed(colorSensor) → {number}",
+        "description": "<div><h4>ev3_colorSensorRed(colorSensor) → {number}</h4><div class=\"description\">\n    Gets the amount of red seen by the colour sensor.\n</div></div>",
+        "meta": "func"
+    },
+    "ev3_connected": {
+        "title": "ev3_connected(obj) → {boolean}",
+        "description": "<div><h4>ev3_connected(obj) → {boolean}</h4><div class=\"description\">\n    Checks if the peripheral is connected.\n</div></div>",
+        "meta": "func"
+    },
+    "ev3_gyroSensor": {
+        "title": "ev3_gyroSensor() → {peripheral}",
+        "description": "<div><h4>ev3_gyroSensor() → {peripheral}</h4><div class=\"description\">\n    Gets the gyro sensor connected any of ports 1, 2, 3 or 4.\n</div></div>",
+        "meta": "func"
+    },
+    "ev3_gyroSensorAngle": {
+        "title": "ev3_gyroSensorAngle(gyroSensor) → {number}",
+        "description": "<div><h4>ev3_gyroSensorAngle(gyroSensor) → {number}</h4><div class=\"description\">\n    Gets the absolute angle detected by the gyro sensor, measured from when\nthe sensor was last switched to angle mode from sensor rate mode.\n</div></div>",
+        "meta": "func"
+    },
+    "ev3_gyroSensorRate": {
+        "title": "ev3_gyroSensorRate(gyroSensor) → {number}",
+        "description": "<div><h4>ev3_gyroSensorRate(gyroSensor) → {number}</h4><div class=\"description\">\n    Gets the rate of rotation detected by the gyro sensor.\n</div></div>",
+        "meta": "func"
+    },
+    "ev3_hello": {
+        "title": "ev3_hello() → {string}",
+        "description": "<div><h4>ev3_hello() → {string}</h4><div class=\"description\">\n    Returns a hello world message.\n</div></div>",
+        "meta": "func"
+    },
+    "ev3_ledGetBrightness": {
+        "title": "ev3_ledGetBrightness(led) → {number}",
+        "description": "<div><h4>ev3_ledGetBrightness(led) → {number}</h4><div class=\"description\">\n    Gets the brightness of the given LED.\n\nThe brightness is a number ranging from 0 (off) to 255 (maximum).\n</div></div>",
+        "meta": "func"
+    },
+    "ev3_ledLeftGreen": {
+        "title": "ev3_ledLeftGreen() → {peripheral}",
+        "description": "<div><h4>ev3_ledLeftGreen() → {peripheral}</h4><div class=\"description\">\n    Gets the left green LED.\n\nNote that the four LEDs on the EV3 are laid out in two pairs of green and\nred. If both in a pair are turned on, you can vary the colours in a small\nspectrum between red and green.\n</div></div>",
+        "meta": "func"
+    },
+    "ev3_ledLeftRed": {
+        "title": "ev3_ledLeftRed() → {peripheral}",
+        "description": "<div><h4>ev3_ledLeftRed() → {peripheral}</h4><div class=\"description\">\n    Gets the left red LED.\n\nNote that the four LEDs on the EV3 are laid out in two pairs of green and\nred. If both in a pair are turned on, you can vary the colours in a small\nspectrum between red and green.\n</div></div>",
+        "meta": "func"
+    },
+    "ev3_ledRightGreen": {
+        "title": "ev3_ledRightGreen() → {peripheral}",
+        "description": "<div><h4>ev3_ledRightGreen() → {peripheral}</h4><div class=\"description\">\n    Gets the right green LED.\n\nNote that the four LEDs on the EV3 are laid out in two pairs of green and\nred. If both in a pair are turned on, you can vary the colours in a small\nspectrum between red and green.\n</div></div>",
+        "meta": "func"
+    },
+    "ev3_ledRightRed": {
+        "title": "ev3_ledRightRed() → {peripheral}",
+        "description": "<div><h4>ev3_ledRightRed() → {peripheral}</h4><div class=\"description\">\n    Gets the right red LED.\n\nNote that the four LEDs on the EV3 are laid out in two pairs of green and\nred. If both in a pair are turned on, you can vary the colours in a small\nspectrum between red and green.\n</div></div>",
+        "meta": "func"
+    },
+    "ev3_ledSetBrightness": {
+        "title": "ev3_ledSetBrightness(led, brightness)",
+        "description": "<div><h4>ev3_ledSetBrightness(led, brightness)</h4><div class=\"description\">\n    Sets the brightness of the given LED.\n\nThe brightness is a number ranging from 0 (off) to 255 (maximum).\n</div></div>",
+        "meta": "func"
+    },
+    "ev3_motorA": {
+        "title": "ev3_motorA() → {peripheral}",
+        "description": "<div><h4>ev3_motorA() → {peripheral}</h4><div class=\"description\">\n    Gets the motor connected to port A.\n</div></div>",
+        "meta": "func"
+    },
+    "ev3_motorB": {
+        "title": "ev3_motorB() → {peripheral}",
+        "description": "<div><h4>ev3_motorB() → {peripheral}</h4><div class=\"description\">\n    Gets the motor connected to port B.\n</div></div>",
+        "meta": "func"
+    },
+    "ev3_motorC": {
+        "title": "ev3_motorC() → {peripheral}",
+        "description": "<div><h4>ev3_motorC() → {peripheral}</h4><div class=\"description\">\n    Gets the motor connected to port C.\n</div></div>",
+        "meta": "func"
+    },
+    "ev3_motorD": {
+        "title": "ev3_motorD() → {peripheral}",
+        "description": "<div><h4>ev3_motorD() → {peripheral}</h4><div class=\"description\">\n    Gets the motor connected to port D.\n</div></div>",
+        "meta": "func"
+    },
+    "ev3_motorGetPosition": {
+        "title": "ev3_motorGetPosition(motor) → {number}",
+        "description": "<div><h4>ev3_motorGetPosition(motor) → {number}</h4><div class=\"description\">\n    Gets the motor's current position, in pulses of the rotary encoder.\n</div></div>",
+        "meta": "func"
+    },
+    "ev3_motorGetSpeed": {
+        "title": "ev3_motorGetSpeed(motor) → {number}",
+        "description": "<div><h4>ev3_motorGetSpeed(motor) → {number}</h4><div class=\"description\">\n    Gets the motor's current speed, in tacho counts per second.\n</div></div>",
+        "meta": "func"
+    },
+    "ev3_motorSetSpeed": {
+        "title": "ev3_motorSetSpeed(motor, speed)",
+        "description": "<div><h4>ev3_motorSetSpeed(motor, speed)</h4><div class=\"description\">\n    Sets the speed the motor will run at the next time <a href=\"global.html#ev3_motorStart\">ev3_motorStart</a>\nis called.\n</div></div>",
+        "meta": "func"
+    },
+    "ev3_motorSetStopAction": {
+        "title": "ev3_motorSetStopAction(motor, stopAction)",
+        "description": "<div><h4>ev3_motorSetStopAction(motor, stopAction)</h4><div class=\"description\">\n    Sets the stop action of the motor.\n\nPossible stop actions are:\n\n<ul><li><code>\"coast\"</code>: power will be removed from the motor and it will freely coast to a stop.</li>\n<li><code>\"brake\"</code>: power will be removed from the motor and a passive electrical load will be placed on the motor. This load will absorb the energy from the rotation of the motors and cause the motor to stop more quickly than coasting.</li>\n<li><code>\"hold\"</code>: actively try to hold the motor at the current position. If an external force tries to turn the motor, the motor will ‘push back’ to maintain its position.</li></ul>\n</div></div>",
+        "meta": "func"
+    },
+    "ev3_motorStart": {
+        "title": "ev3_motorStart(motor)",
+        "description": "<div><h4>ev3_motorStart(motor)</h4><div class=\"description\">\n    Causes the motor to start with the previously set speed and stop action\n(see motorSetSpeed and motorSetStopAction).\n</div></div>",
+        "meta": "func"
+    },
+    "ev3_motorStop": {
+        "title": "ev3_motorStop(motor)",
+        "description": "<div><h4>ev3_motorStop(motor)</h4><div class=\"description\">\n    Causes the motor to stop using the previously set stop action.\n</div></div>",
+        "meta": "func"
+    },
+    "ev3_pause": {
+        "title": "ev3_pause(time)",
+        "description": "<div><h4>ev3_pause(time)</h4><div class=\"description\">\n    Pauses for a period of time.\n</div></div>",
+        "meta": "func"
+    },
+    "ev3_playSequence": {
+        "title": "ev3_playSequence(beeps)",
+        "description": "<div><h4>ev3_playSequence(beeps)</h4><div class=\"description\">\n    Causes the robot to emit a sequence of beeps. Returns after the beeps are\nemitted.\n\nThe beep sequence is an array of <code>[frequency, length (ms), delay (ms),\n...]</code>. For example, <code>[1000, 500, 500, 250, 500, 0]</code> will\ncause the robot to emit a 1000 Hz beep for 500 ms, wait 500 ms, then emit a\n250 Hz beep for 500 ms.\n</div></div>",
+        "meta": "func"
+    },
+    "ev3_reflectedLightIntensity": {
+        "title": "ev3_reflectedLightIntensity(colorSensor) → {number}",
+        "description": "<div><h4>ev3_reflectedLightIntensity(colorSensor) → {number}</h4><div class=\"description\">\n    Gets the reflected light intensity seen by the colour sensor.\n</div></div>",
+        "meta": "func"
+    },
+    "ev3_runForTime": {
+        "title": "ev3_runForTime(motor, time, speed)",
+        "description": "<div><h4>ev3_runForTime(motor, time, speed)</h4><div class=\"description\">\n    Causes the motor to rotate for a specified duration at the specified speed.\n\nNote: this works by sending instructions to the motors. This will return almost immediately, without waiting for the motor to actually run for the specified duration. If you wish to wait, use <a href=\"global.html#ev3_pause\">ev3_pause</a>.\n</div></div>",
+        "meta": "func"
+    },
+    "ev3_runToAbsolutePosition": {
+        "title": "ev3_runToAbsolutePosition(motor, position, speed)",
+        "description": "<div><h4>ev3_runToAbsolutePosition(motor, position, speed)</h4><div class=\"description\">\n    Causes the motor to rotate to the given absolute position (as reported by\n<a href=\"global.html#ev3_motorGetPosition\">ev3_motorGetPosition</a>) with the given speed.\n\nNote: this works by sending instructions to the motors. This will return almost immediately, without waiting for the motor to reach the given absolute position. If you wish to wait, use <a href=\"global.html#ev3_pause\">ev3_pause</a>.\n</div></div>",
+        "meta": "func"
+    },
+    "ev3_runToRelativePosition": {
+        "title": "ev3_runToRelativePosition(motor, position, speed)",
+        "description": "<div><h4>ev3_runToRelativePosition(motor, position, speed)</h4><div class=\"description\">\n    Causes the motor to rotate until the position reaches <code><a href=\"global.html#ev3_motorGetPosition\">ev3_motorGetPosition</a>()\n + position</code> with the given speed.\n\nNote: this works by sending instructions to the motors. This will return almost immediately, without waiting for the motor to reach the given absolute position. If you wish to wait, use <a href=\"global.html#ev3_pause\">ev3_pause</a>.\n</div></div>",
+        "meta": "func"
+    },
+    "ev3_speak": {
+        "title": "ev3_speak(words)",
+        "description": "<div><h4>ev3_speak(words)</h4><div class=\"description\">\n    Makes the robot speak the given words through its speaker. Returns after the\nwords are spoken.\n</div></div>",
+        "meta": "func"
+    },
+    "ev3_touchSensor1": {
+        "title": "ev3_touchSensor1() → {peripheral}",
+        "description": "<div><h4>ev3_touchSensor1() → {peripheral}</h4><div class=\"description\">\n    Gets the touch sensor connected to port 1.\n</div></div>",
+        "meta": "func"
+    },
+    "ev3_touchSensor2": {
+        "title": "ev3_touchSensor2() → {peripheral}",
+        "description": "<div><h4>ev3_touchSensor2() → {peripheral}</h4><div class=\"description\">\n    Gets the touch sensor connected to port 2.\n</div></div>",
+        "meta": "func"
+    },
+    "ev3_touchSensor3": {
+        "title": "ev3_touchSensor3() → {peripheral}",
+        "description": "<div><h4>ev3_touchSensor3() → {peripheral}</h4><div class=\"description\">\n    Gets the touch sensor connected to port 3.\n</div></div>",
+        "meta": "func"
+    },
+    "ev3_touchSensor4": {
+        "title": "ev3_touchSensor4() → {peripheral}",
+        "description": "<div><h4>ev3_touchSensor4() → {peripheral}</h4><div class=\"description\">\n    Gets the touch sensor connected to port 4.\n</div></div>",
+        "meta": "func"
+    },
+    "ev3_touchSensorPressed": {
+        "title": "ev3_touchSensorPressed(touchSensor) → {boolean}",
+        "description": "<div><h4>ev3_touchSensorPressed(touchSensor) → {boolean}</h4><div class=\"description\">\n    Gets whether the touch sensor is pressed.\n</div></div>",
+        "meta": "func"
+    },
+    "ev3_ultrasonicSensor": {
+        "title": "ev3_ultrasonicSensor() → {peripheral}",
+        "description": "<div><h4>ev3_ultrasonicSensor() → {peripheral}</h4><div class=\"description\">\n    Gets the ultrasonic sensor connected any of ports 1, 2, 3 or 4.\n</div></div>",
+        "meta": "func"
+    },
+    "ev3_ultrasonicSensorDistance": {
+        "title": "ev3_ultrasonicSensorDistance(ultrasonicSensor) → {number}",
+        "description": "<div><h4>ev3_ultrasonicSensorDistance(ultrasonicSensor) → {number}</h4><div class=\"description\">\n    Gets the distance read by the ultrasonic sensor in centimeters.\n</div></div>",
+        "meta": "func"
+    },
+    "ev3_waitForButtonPress": {
+        "title": "ev3_waitForButtonPress() → {number}",
+        "description": "<div><h4>ev3_waitForButtonPress() → {number}</h4><div class=\"description\">\n    Waits for one of the buttons on the EV3's control face to be pressed, then\nreturns a value corresponding to the button that was pressed:\n\n<ul><li>0 enter (the middle button)</li>\n<li>1 back (the top left button)</li>\n<li>2 left</li>\n<li>3 right</li>\n<li>4 up</li>\n<li>5 down</li></ul>\n</div></div>",
+        "meta": "func"
+    },
+    "flip_horiz": {
+        "title": "flip_horiz(rune) → {Rune}",
+        "description": "<div><h4>flip_horiz(rune) → {Rune}</h4><div class=\"description\">\n    makes a new Rune from a given Rune by\nflipping it around a vertical axis,\ncreating a mirror image\n</div></div>",
+        "meta": "func"
+    },
+    "flip_vert": {
+        "title": "flip_vert(rune) → {Rune}",
+        "description": "<div><h4>flip_vert(rune) → {Rune}</h4><div class=\"description\">\n    makes a new Rune from a given Rune by\nflipping it around a horizontal axis,\nturning it upside down\n</div></div>",
+        "meta": "func"
+    },
+    "g_of": {
+        "title": "g_of(p) → {Number}",
+        "description": "<div><h4>g_of(p) → {Number}</h4><div class=\"description\">\n    retrieves the green component of a given Point\n</div></div>",
+        "meta": "func"
+    },
+    "get_duration": {
+        "title": "get_duration(sound) → {Number}",
+        "description": "<div><h4>get_duration(sound) → {Number}</h4><div class=\"description\">\n    Accesses the duration of a Sound, in seconds.\n</div></div>",
+        "meta": "func"
+    },
+    "get_screen_display_height": {
+        "title": "get_screen_display_height() → {number}",
+        "description": "<div><h4>get_screen_display_height() → {number}</h4><div class=\"description\">\n    Get game screen display height (accounting window size).\n</div></div>",
+        "meta": "func"
+    },
+    "get_screen_display_width": {
+        "title": "get_screen_display_width() → {number}",
+        "description": "<div><h4>get_screen_display_width() → {number}</h4><div class=\"description\">\n    Get game screen display width (accounting window size).\n</div></div>",
+        "meta": "func"
+    },
+    "get_screen_height": {
+        "title": "get_screen_height() → {number}",
+        "description": "<div><h4>get_screen_height() → {number}</h4><div class=\"description\">\n    Get in-game screen height.\n</div></div>",
+        "meta": "func"
+    },
+    "get_screen_width": {
+        "title": "get_screen_width() → {number}",
+        "description": "<div><h4>get_screen_width() → {number}</h4><div class=\"description\">\n    Get in-game screen width.\n</div></div>",
+        "meta": "func"
+    },
+    "get_wave": {
+        "title": "get_wave(sound) → {function}",
+        "description": "<div><h4>get_wave(sound) → {function}</h4><div class=\"description\">\n    Accesses the wave of a Sound.\nThe wave is a function from a nonnegative time (in seconds)\nto an amplitude value that should lie between\n-1 and 1.\n</div></div>",
+        "meta": "func"
+    },
+    "green": {
+        "title": "green(rune) → {Rune}",
+        "description": "<div><h4>green(rune) → {Rune}</h4><div class=\"description\">\n    colors the given rune green.\n</div></div>",
+        "meta": "func"
+    },
+    "green_of": {
+        "title": "green_of(px) → {Number}",
+        "description": "<div><h4>green_of(px) → {Number}</h4><div class=\"description\">\n    Returns the green component of a given Pixel <code>px</code>\n</div></div>",
+        "meta": "func"
+    },
+    "hollusion": {
+        "title": "hollusion(rune) → {Picture}",
+        "description": "<div><h4>hollusion(rune) → {Picture}</h4><div class=\"description\">\n    turns a given Rune into Hollusion\n</div></div>",
+        "meta": "func"
+    },
+    "indigo": {
+        "title": "indigo(rune) → {Rune}",
+        "description": "<div><h4>indigo(rune) → {Rune}</h4><div class=\"description\">\n    colors the given rune indigo.\n</div></div>",
+        "meta": "func"
+    },
+    "init_record": {
+        "title": "init_record() → {undefined}",
+        "description": "<div><h4>init_record() → {undefined}</h4><div class=\"description\">\n    Initialize recording by obtaining permission\nto use the default device microphone\n</div></div>",
+        "meta": "func"
+    },
+    "install_filter": {
+        "title": "install_filter(f) → {undefined}",
+        "description": "<div><h4>install_filter(f) → {undefined}</h4><div class=\"description\">\n    Installs a given Filter to be used to transform\nthe Images that the camera captures into Images\ndisplayed on the screen. A Filter is a function\nthat is applied to two Images (2-D arrays\nof Pixels): the source Image and the destination\nImage.\n</div></div>",
+        "meta": "func"
+    },
+    "invert": {
+        "title": "invert(original) → {Curve}",
+        "description": "<div><h4>invert(original) → {Curve}</h4><div class=\"description\">\n    this function is a Curve transformation: a function from a\nCurve to a Curve. The points of the result Curve are\nthe same points as the points of the original Curve, but\nin reverse: The result Curve applied to 0 is the original Curve\napplied to 1 and vice versa.\n</div></div>",
+        "meta": "func"
+    },
+    "is_sound": {
+        "title": "is_sound(x) → {boolean}",
+        "description": "<div><h4>is_sound(x) → {boolean}</h4><div class=\"description\">\n    Checks if a given value is a Sound\n</div></div>",
+        "meta": "func"
+    },
+    "letter_name_to_frequency": {
+        "title": "letter_name_to_frequency(str) → {Number}",
+        "description": "<div><h4>letter_name_to_frequency(str) → {Number}</h4><div class=\"description\">\n    converts a letter name <code>str</code> to corresponding frequency.\nFirst converts <code>str</code> to a note using <code>letter_name_to_midi_note</code>\nand then to a frequency using <code>midi_note_to_frequency</code>\n</div></div>",
+        "meta": "func"
+    },
+    "letter_name_to_midi_note": {
+        "title": "letter_name_to_midi_note(str) → {Number}",
+        "description": "<div><h4>letter_name_to_midi_note(str) → {Number}</h4><div class=\"description\">\n    converts a letter name <code>str</code> to corresponding midi note.\nExamples for letter names are <code>\"A5\"</code>, <code>\"B3\"</code>, <code>\"D#4\"</code>.\nSee <a href=\"https://i.imgur.com/qGQgmYr.png\">mapping from\nletter name to midi notes</a>\n</div></div>",
+        "meta": "func"
+    },
+    "load_image": {
+        "title": "load_image(key, url)",
+        "description": "<div><h4>load_image(key, url)</h4><div class=\"description\">\n    Load the image asset into the scene for use. All images\nmust be loaded before used in create_image.\n</div></div>",
+        "meta": "func"
+    },
+    "load_sound": {
+        "title": "load_sound(key, url)",
+        "description": "<div><h4>load_sound(key, url)</h4><div class=\"description\">\n    Load the sound asset into the scene for use. All sound\nmust be loaded before used in play_sound.\n</div></div>",
+        "meta": "func"
+    },
+    "load_spritesheet": {
+        "title": "load_spritesheet(key, url, spritesheet_config)",
+        "description": "<div><h4>load_spritesheet(key, url, spritesheet_config)</h4><div class=\"description\">\n    Load the spritesheet into the scene for use. All spritesheet must\nbe loaded before used in create_image.\n</div></div>",
+        "meta": "func"
+    },
+    "make_3D_color_point": {
+        "title": "make_3D_color_point(x, y, z, r, g, b) → {Point}",
+        "description": "<div><h4>make_3D_color_point(x, y, z, r, g, b) → {Point}</h4><div class=\"description\">\n    makes a 3D color Point with given x, y and z coordinates, \nand RGB values ranging from 0 to 255. \nAny input lower than 0 for RGB will be rounded up to 0, \nand any input higher than 255 will be rounded down to 255.\n</div></div>",
+        "meta": "func"
+    },
+    "make_3D_point": {
+        "title": "make_3D_point(x, y, z) → {Point}",
+        "description": "<div><h4>make_3D_point(x, y, z) → {Point}</h4><div class=\"description\">\n    makes a 3D Point with given x, y and z coordinates\n</div></div>",
+        "meta": "func"
+    },
+    "make_color_point": {
+        "title": "make_color_point(x, y, r, g, b) → {Point}",
+        "description": "<div><h4>make_color_point(x, y, r, g, b) → {Point}</h4><div class=\"description\">\n    makes a color Point with given x and y coordinates, \nand RGB values ranging from 0 to 255. \nAny input lower than 0 for RGB will be rounded up to 0, \nand any input higher than 255 will be rounded down to 255.\n</div></div>",
+        "meta": "func"
+    },
+    "make_cross": {
+        "title": "make_cross(rune) → {Rune}",
+        "description": "<div><h4>make_cross(rune) → {Rune}</h4><div class=\"description\">\n    makes a new Rune from a given Rune by\narranging into a square for copies of the \ngiven Rune in different orientations\n</div></div>",
+        "meta": "func"
+    },
+    "make_point": {
+        "title": "make_point(x, y) → {Point}",
+        "description": "<div><h4>make_point(x, y) → {Point}</h4><div class=\"description\">\n    makes a Point with given x and y coordinates\n</div></div>",
+        "meta": "func"
+    },
+    "make_sound": {
+        "title": "make_sound(wave, duration) → {Sound}",
+        "description": "<div><h4>make_sound(wave, duration) → {Sound}</h4><div class=\"description\">\n    Makes a Sound from a wave and a duration.\nThe wave is a function from a nonnegative time (in seconds)\nto an amplitude value that should lie between\n-1 and 1. The duration is given in seconds.\n</div></div>",
+        "meta": "func"
+    },
+    "midi_note_to_frequency": {
+        "title": "midi_note_to_frequency(n) → {Number}",
+        "description": "<div><h4>midi_note_to_frequency(n) → {Number}</h4><div class=\"description\">\n    converts a midi note <code>n</code> to corresponding frequency.\nThe note is given as an integer Number.\n</div></div>",
+        "meta": "func"
+    },
+    "noise_sound": {
+        "title": "noise_sound(duration) → {Sound}",
+        "description": "<div><h4>noise_sound(duration) → {Sound}</h4><div class=\"description\">\n    makes a Sound of a given duration by randomly\ngenerating amplitude values\n</div></div>",
+        "meta": "func"
+    },
+    "orange": {
+        "title": "orange(rune) → {Rune}",
+        "description": "<div><h4>orange(rune) → {Rune}</h4><div class=\"description\">\n    colors the given rune orange.\n</div></div>",
+        "meta": "func"
+    },
+    "overlay": {
+        "title": "overlay(rune1, rune2) → {Rune}",
+        "description": "<div><h4>overlay(rune1, rune2) → {Rune}</h4><div class=\"description\">\n    makes a 3D-Rune from two given Runes by\noverlaying the first with the second, each\noccupying equal parts of the depth of the\nresult\n</div></div>",
+        "meta": "func"
+    },
+    "overlay_frac": {
+        "title": "overlay_frac(frac, rune1, rune2) → {Rune}",
+        "description": "<div><h4>overlay_frac(frac, rune1, rune2) → {Rune}</h4><div class=\"description\">\n    makes a 3D-Rune from two given Runes by\noverlaying the first with the second\nsuch that the first one occupies frac \nportion of the depth of the 3D result \nand the second the rest\n</div></div>",
+        "meta": "func"
+    },
+    "piano": {
+        "title": "piano(note, duration) → {Sound}",
+        "description": "<div><h4>piano(note, duration) → {Sound}</h4><div class=\"description\">\n    returns a Sound that is reminiscent of a piano, playing\na given note for a given <code>duration</code> of seconds\n</div></div>",
+        "meta": "func"
+    },
+    "pink": {
+        "title": "pink(rune) → {Rune}",
+        "description": "<div><h4>pink(rune) → {Rune}</h4><div class=\"description\">\n    colors the given rune pink.\n</div></div>",
+        "meta": "func"
+    },
+    "play": {
+        "title": "play(sound) → {Sound}",
+        "description": "<div><h4>play(sound) → {Sound}</h4><div class=\"description\">\n    plays a given Sound using your computer's sound device\n</div></div>",
+        "meta": "func"
+    },
+    "play_anim_on_image": {
+        "title": "play_anim_on_image(image, anims_key)",
+        "description": "<div><h4>play_anim_on_image(image, anims_key)</h4><div class=\"description\">\n    Start playing the given animation on image game object.\n</div></div>",
+        "meta": "func"
+    },
+    "play_concurrently": {
+        "title": "play_concurrently(sound) → {undefined}",
+        "description": "<div><h4>play_concurrently(sound) → {undefined}</h4><div class=\"description\">\n    plays a given sound without regard if a sound is already playing\n</div></div>",
+        "meta": "func"
+    },
+    "play_sound": {
+        "title": "play_sound(key, config)",
+        "description": "<div><h4>play_sound(key, config)</h4><div class=\"description\">\n    Play the sound associated with the key.\nThrows error if key is nonexistent.\n</div></div>",
+        "meta": "func"
+    },
+    "purple": {
+        "title": "purple(rune) → {Rune}",
+        "description": "<div><h4>purple(rune) → {Rune}</h4><div class=\"description\">\n    colors the given rune purple.\n</div></div>",
+        "meta": "func"
+    },
+    "put_in_standard_position": {
+        "title": "put_in_standard_position(curve) → {Curve}",
+        "description": "<div><h4>put_in_standard_position(curve) → {Curve}</h4><div class=\"description\">\n    this function is a Curve transformation: It\ntakes a Curve as argument and returns\na new Curve, as follows.\nA Curve is in <em>standard position</em> if it starts at (0,0) ends at (1,0).\nThis function puts the given Curve in standard position by \nrigidly translating it so its\nstart Point is at the origin (0,0), then rotating it about the origin to put\nits endpoint on the x axis, then scaling it to put the endpoint at (1,0).\nBehavior is unspecified on closed Curves where start-point equal end-point.\n</div></div>",
+        "meta": "func"
+    },
+    "quarter_turn_left": {
+        "title": "quarter_turn_left(rune) → {Rune}",
+        "description": "<div><h4>quarter_turn_left(rune) → {Rune}</h4><div class=\"description\">\n    makes a new Rune from a given Rune\nby turning it a quarter-turn in\nanti-clockwise direction.\n</div></div>",
+        "meta": "func"
+    },
+    "quarter_turn_right": {
+        "title": "quarter_turn_right(rune) → {Rune}",
+        "description": "<div><h4>quarter_turn_right(rune) → {Rune}</h4><div class=\"description\">\n    makes a new Rune from a given Rune\nby turning it a quarter-turn around the centre in\nclockwise direction.\n</div></div>",
+        "meta": "func"
+    },
+    "r_of": {
+        "title": "r_of(p) → {Number}",
+        "description": "<div><h4>r_of(p) → {Number}</h4><div class=\"description\">\n    retrieves the red component of a given Point\n</div></div>",
+        "meta": "func"
+    },
+    "random_color": {
+        "title": "random_color(rune) → {Rune}",
+        "description": "<div><h4>random_color(rune) → {Rune}</h4><div class=\"description\">\n    Gives random color to the given rune.\nThe color is chosen randomly from the following nine \ncolors: red, pink, purple, indigo, blue, green, yellow, orange, brown\n</div></div>",
+        "meta": "func"
+    },
+    "record": {
+        "title": "record(buffer) → {function}",
+        "description": "<div><h4>record(buffer) → {function}</h4><div class=\"description\">\n    takes a <code>buffer</code> duration (in seconds) as argument, and\nreturns a nullary stop function <code>stop</code>. A call\n<code>stop()</code> returns a sound promise: a nullary function\nthat returns a sound. Example: <pre><code>init_record();\nconst stop = record(0.5);\n// record after 0.5 seconds. Then in next query:\nconst promise = stop();\n// In next query, you can play the promised sound, by\n// applying the promise:\nplay(promise());</code></pre>\n</div></div>",
+        "meta": "func"
+    },
+    "record_for": {
+        "title": "record_for(duration, buffer) → {function}",
+        "description": "<div><h4>record_for(duration, buffer) → {function}</h4><div class=\"description\">\n    Records a sound of given <code>duration</code> in seconds, after\na <code>buffer</code> also in seconds, and\nreturns a sound promise: a nullary function\nthat returns a sound. Example: <pre><code>init_record();\nconst promise = record_for(2, 0.5);\n// In next query, you can play the promised sound, by\n// applying the promise:\nplay(promise());</code></pre>\n</div></div>",
+        "meta": "func"
+    },
+    "red": {
+        "title": "red(rune) → {Rune}",
+        "description": "<div><h4>red(rune) → {Rune}</h4><div class=\"description\">\n    colors the given rune red.\n</div></div>",
+        "meta": "func"
+    },
+    "red_of": {
+        "title": "red_of(px) → {Number}",
+        "description": "<div><h4>red_of(px) → {Number}</h4><div class=\"description\">\n    Returns the red component of a given Pixel <code>px</code>\n</div></div>",
+        "meta": "func"
+    },
+    "remove_listener": {
+        "title": "remove_listener(listener)",
+        "description": "<div><h4>remove_listener(listener)</h4><div class=\"description\">\n    Deactivate and remove listener.\n</div></div>",
+        "meta": "func"
+    },
+    "repeat_pattern": {
+        "title": "repeat_pattern(n, f, initial) → {t}",
+        "description": "<div><h4>repeat_pattern(n, f, initial) → {t}</h4><div class=\"description\">\n    applies a given function n times to an initial value\n</div></div>",
+        "meta": "func"
+    },
+    "reset_filter": {
+        "title": "reset_filter() → {undefined}",
+        "description": "<div><h4>reset_filter() → {undefined}</h4><div class=\"description\">\n    Resets the installed Filter back to the default Filter\n</div></div>",
+        "meta": "func"
+    },
+    "rotate": {
+        "title": "rotate(rad, rune) → {Rune}",
+        "description": "<div><h4>rotate(rad, rune) → {Rune}</h4><div class=\"description\">\n    rotates a given Rune by a given angle,\ngiven in radians, in anti-clockwise direction.\nNote that parts of the Rune\nmay be cropped as a result.\n</div></div>",
+        "meta": "func"
+    },
+    "rotate_around_origin": {
+        "title": "rotate_around_origin(a, b, c) → {unary_Curve_operator}",
+        "description": "<div><h4>rotate_around_origin(a, b, c) → {unary_Curve_operator}</h4><div class=\"description\">\n    this function \ntakes either 1 or 3 angles, a, b and c in radians as parameter and \nreturns a Curve transformation: \na function that takes a Curve as argument and returns\na new Curve, which is the original Curve rotated by the given angle\naround the z-axis (1 parameter) in counter-clockwise direction, or \nthe original Curve rotated extrinsically with Euler angles (a, b, c) \nabout x, y, and z axes (3 parameters).\n</div></div>",
+        "meta": "func"
+    },
+    "sawtooth_sound": {
+        "title": "sawtooth_sound(freq, duration) → {Sound}",
+        "description": "<div><h4>sawtooth_sound(freq, duration) → {Sound}</h4><div class=\"description\">\n    makes a sawtooth wave Sound with given frequency and a given duration\n</div></div>",
+        "meta": "func"
+    },
+    "scale": {
+        "title": "scale(ratio, rune) → {Rune}",
+        "description": "<div><h4>scale(ratio, rune) → {Rune}</h4><div class=\"description\">\n    scales a given Rune by a given factor in both x and y direction\n</div></div>",
+        "meta": "func"
+    },
+    "scale_curve": {
+        "title": "scale_curve(a, b, c) → {unary_Curve_operator}",
+        "description": "<div><h4>scale_curve(a, b, c) → {unary_Curve_operator}</h4><div class=\"description\">\n    this function takes scaling factors <code>a</code>, <code>b</code> \nand <code>c</code>, each with default value of 1, as arguments and \nreturns a Curve transformation that \nscales a given Curve by <code>a</code> in x-direction, <code>b</code> \nin y-direction and <code>c</code> in z-direction.\n</div></div>",
+        "meta": "func"
+    },
+    "scale_independent": {
+        "title": "scale_independent(ratio_x, ratio_y, rune) → {Rune}",
+        "description": "<div><h4>scale_independent(ratio_x, ratio_y, rune) → {Rune}</h4><div class=\"description\">\n    scales a given Rune by separate factors in x and y direction\n</div></div>",
+        "meta": "func"
+    },
+    "scale_proportional": {
+        "title": "scale_proportional(s) → {unary_Curve_operator}",
+        "description": "<div><h4>scale_proportional(s) → {unary_Curve_operator}</h4><div class=\"description\">\n    this function takes a scaling factor s argument and returns a\nCurve transformation that\nscales a given Curve by s in x, y and z direction.\n</div></div>",
+        "meta": "func"
+    },
+    "set_alpha": {
+        "title": "set_alpha(obj, alpha) → {Phaser.GameObjects.GameObject}",
+        "description": "<div><h4>set_alpha(obj, alpha) → {Phaser.GameObjects.GameObject}</h4><div class=\"description\">\n    Set the alpha of the object.\nMutate the object.\n</div></div>",
+        "meta": "func"
+    },
+    "set_display_size": {
+        "title": "set_display_size(obj, x, y) → {Phaser.GameObjects.GameObject}",
+        "description": "<div><h4>set_display_size(obj, x, y) → {Phaser.GameObjects.GameObject}</h4><div class=\"description\">\n    Set the display size of the object.\nMutate the object.\n</div></div>",
+        "meta": "func"
+    },
+    "set_flip": {
+        "title": "set_flip(obj, x, y) → {Phaser.GameObjects.GameObject}",
+        "description": "<div><h4>set_flip(obj, x, y) → {Phaser.GameObjects.GameObject}</h4><div class=\"description\">\n    Sets the horizontal and flipped state of the object.\nMutate the object.\n</div></div>",
+        "meta": "func"
+    },
+    "set_interactive": {
+        "title": "set_interactive(obj, config) → {Phaser.GameObjects.GameObject}",
+        "description": "<div><h4>set_interactive(obj, config) → {Phaser.GameObjects.GameObject}</h4><div class=\"description\">\n    Set the interactivity of the object.\nMutate the object.\n\nRectangle and Ellipse are not able to receive configs, only boolean\ni.e. set_interactive(rect, true); set_interactive(ellipse, false)\n</div></div>",
+        "meta": "func"
+    },
+    "set_origin": {
+        "title": "set_origin(obj, x, y) → {Phaser.GameObjects.GameObject}",
+        "description": "<div><h4>set_origin(obj, x, y) → {Phaser.GameObjects.GameObject}</h4><div class=\"description\">\n    Set the origin in which all position related will be relative to.\nIn other words, the anchor of the object.\nMutate the object.\n</div></div>",
+        "meta": "func"
+    },
+    "set_position": {
+        "title": "set_position(obj, x, y) → {Phaser.GameObjects.Container}",
+        "description": "<div><h4>set_position(obj, x, y) → {Phaser.GameObjects.Container}</h4><div class=\"description\">\n    Set the position of the game object\nMutate the object\n</div></div>",
+        "meta": "func"
+    },
+    "set_rgba": {
+        "title": "set_rgba(px, r, g, b, a) → {undefined}",
+        "description": "<div><h4>set_rgba(px, r, g, b, a) → {undefined}</h4><div class=\"description\">\n    Assigns the red, green, blue and alpha components of a Pixel \n<code>px</code> to given values\n</div></div>",
+        "meta": "func"
+    },
+    "set_rotation": {
+        "title": "set_rotation(obj, rad) → {Phaser.GameObjects.GameObject}",
+        "description": "<div><h4>set_rotation(obj, rad) → {Phaser.GameObjects.GameObject}</h4><div class=\"description\">\n    Set the rotation of the object.\nMutate the object.\n</div></div>",
+        "meta": "func"
+    },
+    "set_scale": {
+        "title": "set_scale(obj, x, y) → {Phaser.GameObjects.GameObject}",
+        "description": "<div><h4>set_scale(obj, x, y) → {Phaser.GameObjects.GameObject}</h4><div class=\"description\">\n    Set the scale of the object.\nMutate the object.\n</div></div>",
+        "meta": "func"
+    },
+    "show": {
+        "title": "show(rune) → {Picture}",
+        "description": "<div><h4>show(rune) → {Picture}</h4><div class=\"description\">\n    turns a given Rune into a two-dimensional Picture\n</div></div>",
+        "meta": "func"
+    },
+    "silence_sound": {
+        "title": "silence_sound(duration) → {Sound}",
+        "description": "<div><h4>silence_sound(duration) → {Sound}</h4><div class=\"description\">\n    makes a silence Sound with a given duration\n</div></div>",
+        "meta": "func"
+    },
+    "simultaneously": {
+        "title": "simultaneously(sounds) → {Sound}",
+        "description": "<div><h4>simultaneously(sounds) → {Sound}</h4><div class=\"description\">\n    makes a new sound by combining the sounds in a given\nlist so that\nthey play simutaneously, all starting at the beginning of the \nresulting sound\n</div></div>",
+        "meta": "func"
+    },
+    "sine_sound": {
+        "title": "sine_sound(freq, duration) → {Sound}",
+        "description": "<div><h4>sine_sound(freq, duration) → {Sound}</h4><div class=\"description\">\n    makes a sine wave Sound with given frequency and a given duration\n</div></div>",
+        "meta": "func"
+    },
+    "square_sound": {
+        "title": "square_sound(freq, duration) → {Sound}",
+        "description": "<div><h4>square_sound(freq, duration) → {Sound}</h4><div class=\"description\">\n    makes a square wave Sound with given frequency and a given duration\n</div></div>",
+        "meta": "func"
+    },
+    "stack": {
+        "title": "stack(rune1, rune2) → {Rune}",
+        "description": "<div><h4>stack(rune1, rune2) → {Rune}</h4><div class=\"description\">\n    makes a new Rune from two given Runes by\nplacing the first on top of the second, each\noccupying equal parts of the height of the \nresult\n</div></div>",
+        "meta": "func"
+    },
+    "stack_frac": {
+        "title": "stack_frac(frac, rune1, rune2) → {Rune}",
+        "description": "<div><h4>stack_frac(frac, rune1, rune2) → {Rune}</h4><div class=\"description\">\n    makes a new Rune from two given Runes by\nplacing the first on top of the second\nsuch that the first one occupies frac \nportion of the height of the result and \nthe second the rest\n</div></div>",
+        "meta": "func"
+    },
+    "stacking_adsr": {
+        "title": "stacking_adsr(waveform, base_frequency, duration, envelopes) → {Sound}",
+        "description": "<div><h4>stacking_adsr(waveform, base_frequency, duration, envelopes) → {Sound}</h4><div class=\"description\">\n    Returns a Sound that results from applying a list of envelopes\nto a given wave form. The wave form should be a Sound generator that\ntakes a frequency and a duration as arguments and produces a\nSound with the given frequency and duration. Each envelope is\napplied to a harmonic: the first harmonic has the given frequency,\nthe second has twice the frequency, the third three times the\nfrequency etc.\n</div></div>",
+        "meta": "func"
+    },
+    "stackn": {
+        "title": "stackn(n, rune) → {Rune}",
+        "description": "<div><h4>stackn(n, rune) → {Rune}</h4><div class=\"description\">\n    makes a new Rune from a given Rune\nby vertically stacking n copies of it\n</div></div>",
+        "meta": "func"
+    },
+    "stop": {
+        "title": "stop() → {undefined}",
+        "description": "<div><h4>stop() → {undefined}</h4><div class=\"description\">\n    Stops playing the current sound\n</div></div>",
+        "meta": "func"
+    },
+    "translate": {
+        "title": "translate(x, y, rune) → {Rune}",
+        "description": "<div><h4>translate(x, y, rune) → {Rune}</h4><div class=\"description\">\n    translates a given Rune by given values in x and y direction\n</div></div>",
+        "meta": "func"
+    },
+    "translate_curve": {
+        "title": "translate_curve(x0, y0, z0) → {function}",
+        "description": "<div><h4>translate_curve(x0, y0, z0) → {function}</h4><div class=\"description\">\n    this function returns a Curve transformation: \nIt takes an x-value x0, a y-value y0 and a z-value z0, \neach with default value of 0, as arguments \nand returns a Curve transformation that\ntakes a Curve as argument and returns\na new Curve, by translating the original by x0 in x-direction, \ny0 in y-direction and z0 in z-direction.\n</div></div>",
+        "meta": "func"
+    },
+    "triangle_sound": {
+        "title": "triangle_sound(freq, duration) → {Sound}",
+        "description": "<div><h4>triangle_sound(freq, duration) → {Sound}</h4><div class=\"description\">\n    makes a triangle wave Sound with given frequency and a given duration\n</div></div>",
+        "meta": "func"
+    },
+    "trombone": {
+        "title": "trombone(note, duration) → {Sound}",
+        "description": "<div><h4>trombone(note, duration) → {Sound}</h4><div class=\"description\">\n    returns a Sound that is reminiscent of a trombone, playing\na given note for a given <code>duration</code> of seconds\n</div></div>",
+        "meta": "func"
+    },
+    "turn_upside_down": {
+        "title": "turn_upside_down(rune) → {Rune}",
+        "description": "<div><h4>turn_upside_down(rune) → {Rune}</h4><div class=\"description\">\n    makes a new Rune from a given Rune\nby turning it upside-down\n</div></div>",
+        "meta": "func"
+    },
+    "unit_circle": {
+        "title": "unit_circle(t) → {Point}",
+        "description": "<div><h4>unit_circle(t) → {Point}</h4><div class=\"description\">\n    this function is a curve: a function from a\nfraction t to a point. The points lie on the\nunit circle. They start at Point (1,0) when\nt is 0. When t is 0.25, they reach Point (0,1),\nwhen t is 0.5, they reach Point (-1, 0), etc.\n</div></div>",
+        "meta": "func"
+    },
+    "unit_line": {
+        "title": "unit_line(t) → {Point}",
+        "description": "<div><h4>unit_line(t) → {Point}</h4><div class=\"description\">\n    this function is a curve: a function from a\nfraction t to a point. The x-coordinate at\nfranction t is t, and the y-coordinate is 0.\n</div></div>",
+        "meta": "func"
+    },
+    "unit_line_at": {
+        "title": "unit_line_at(t) → {Curve}",
+        "description": "<div><h4>unit_line_at(t) → {Curve}</h4><div class=\"description\">\n    this function is a Curve generator: it takes\na number and returns a horizontal curve. The number\nis a y-coordinate, and the Curve generates\nonly points with the given y-coordinate.\n</div></div>",
+        "meta": "func"
+    },
+    "video_height": {
+        "title": "video_height() → {Number}",
+        "description": "<div><h4>video_height() → {Number}</h4><div class=\"description\">\n    Returns the current height of the output video display in\npixels, i.e. the number of pixels in vertical direction\n</div></div>",
+        "meta": "func"
+    },
+    "video_width": {
+        "title": "video_width() → {Number}",
+        "description": "<div><h4>video_width() → {Number}</h4><div class=\"description\">\n    Returns the current width of the output video display in\npixels, i.e. the number of pixels in horizontal direction\n</div></div>",
+        "meta": "func"
+    },
+    "violin": {
+        "title": "violin(note, duration) → {Sound}",
+        "description": "<div><h4>violin(note, duration) → {Sound}</h4><div class=\"description\">\n    returns a Sound that is reminiscent of a violin, playing\na given note for a given <code>duration</code> of seconds\n</div></div>",
+        "meta": "func"
+    },
+    "white": {
+        "title": "white(rune) → {Rune}",
+        "description": "<div><h4>white(rune) → {Rune}</h4><div class=\"description\">\n    colors the given rune white.\n</div></div>",
+        "meta": "func"
+    },
+    "x_of": {
+        "title": "x_of(p) → {Number}",
+        "description": "<div><h4>x_of(p) → {Number}</h4><div class=\"description\">\n    retrieves the x-coordinate of a given Point\n</div></div>",
+        "meta": "func"
+    },
+    "y_of": {
+        "title": "y_of(p) → {Number}",
+        "description": "<div><h4>y_of(p) → {Number}</h4><div class=\"description\">\n    retrieves the y-coordinate of a given Point\n</div></div>",
+        "meta": "func"
+    },
+    "yellow": {
+        "title": "yellow(rune) → {Rune}",
+        "description": "<div><h4>yellow(rune) → {Rune}</h4><div class=\"description\">\n    colors the given rune yellow.\n</div></div>",
+        "meta": "func"
+    },
+    "z_of": {
+        "title": "z_of(p) → {Number}",
+        "description": "<div><h4>z_of(p) → {Number}</h4><div class=\"description\">\n    retrieves the z-coordinate of a given Point\n</div></div>",
+        "meta": "func"
+    }
+}

@@ -1,0 +1,12 @@
+import es from 'estree';
+export declare const createLiteral: (value: string | number | boolean | null, raw?: string) => es.Literal;
+export declare const createIdentifier: (name: string) => es.Identifier;
+export declare const createCallExpression: (functionName: string, functionArguments: Array<es.Expression | es.SpreadElement>) => es.SimpleCallExpression;
+export declare const createVariableDeclarator: (id: es.Identifier, initialValue?: es.Expression | null | undefined) => es.VariableDeclarator;
+export declare const createVariableDeclaration: (declarations: es.VariableDeclarator[], kind: 'var' | 'let' | 'const') => es.VariableDeclaration;
+export declare const createReturnStatement: (argument: es.Expression | null | undefined) => es.ReturnStatement;
+export declare const createFunctionDeclaration: (name: string, params: es.Pattern[], body: es.Statement[]) => es.FunctionDeclaration;
+export declare const createImportDeclaration: (specifiers: Array<es.ImportSpecifier | es.ImportDefaultSpecifier | es.ImportNamespaceSpecifier>, source: es.Literal) => es.ImportDeclaration;
+export declare const createImportSpecifier: (local: es.Identifier, imported: es.Identifier) => es.ImportSpecifier;
+export declare const createImportDefaultSpecifier: (local: es.Identifier) => es.ImportDefaultSpecifier;
+export declare const createImportNamespaceSpecifier: (local: es.Identifier) => es.ImportNamespaceSpecifier;

@@ -1,0 +1,37 @@
+import { Memory } from './memory';
+export declare class RuntimeStack extends Memory {
+    display(): void;
+    makeClosure(poolIndex: number): number;
+    getClosurePoolIndex(closureNaN: number): number;
+    static BlockframeEnvironmentOffset: number;
+    static BlockframeSize: number;
+    allocateBlockframe(env: number): number;
+    getBlockframeEnvironment(address: number): number;
+    isBlockframe(x: number): boolean;
+    static CallframeEnvironmentOffset: number;
+    static CallframePcOffset: number;
+    static CallframeSize: number;
+    allocateCallframe(env: number, pc: number): number;
+    getCallframeEnvironment(address: number): number;
+    getCallframePc(address: number): number;
+    isCallframe(x: number): boolean;
+    static FrameSizeOffset: number;
+    static FrameValuesOffset: number;
+    allocateFrame(size: number): number;
+    getFrameSize(frameAddress: number): number;
+    getFrameValue(frameAddress: number, valueIndex: number): number;
+    setFrameValue(frameAddress: number, valueIndex: number, value: number): void;
+    displayFrame(frameAddress: number): void;
+    static EnvironmentSizeOffset: number;
+    static EnvironmentFramesOffset: number;
+    allocateEnvironment(size: number): number;
+    createGlobalEnvironment(): number;
+    getEnvironmentSize(envAddress: number): number;
+    getEnvironmentValue(envAddress: number, position: number[]): number;
+    setEnvironmentValue(envAddress: number, position: number[], value: number): void;
+    getEnvironmentFrame(envAddress: number, frameIndex: number): number;
+    setEnvironmentFrame(envAddress: number, frameIndex: number, frame: number): void;
+    environmentExtend(frameAddress: number, envAddress: number): number;
+    deallocateEnvironment(oldEnv: number): void;
+    displayEnvironment(envAddress: number): void;
+}

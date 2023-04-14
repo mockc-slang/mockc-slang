@@ -1,0 +1,17 @@
+import { Value } from '../types';
+export declare type Pair<H, T> = [H, T];
+export declare type List = null | NonEmptyList;
+declare type NonEmptyList = Pair<any, any>;
+export declare function pair<H, T>(x: H, xs: T): Pair<H, T>;
+export declare function is_pair(x: any): boolean;
+export declare function head(xs: any): any;
+export declare function tail(xs: any): any;
+export declare function is_null(xs: List): boolean;
+export declare function list(...elements: any[]): List;
+export declare function is_list(xs: List): boolean;
+export declare function list_to_vector(lst: List): any[];
+export declare function vector_to_list(vector: any[]): List;
+export declare function set_head(xs: any, x: any): undefined;
+export declare function set_tail(xs: any, x: any): undefined;
+export declare function rawDisplayList(display: any, xs: Value, prepend: string): any;
+export {};

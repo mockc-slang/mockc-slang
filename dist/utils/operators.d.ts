@@ -1,0 +1,14 @@
+import { BinaryOperator, UnaryOperator } from 'estree';
+import { LazyBuiltIn } from '../createContext';
+import { Thunk } from '../types';
+export declare function forceIt(val: Thunk | any): any;
+export declare function wrapLazyCallee(candidate: any): any;
+export declare function makeLazyFunction(candidate: any): LazyBuiltIn;
+export declare function callIfFuncAndRightArgs(candidate: any, line: number, column: number, ...args: any[]): any;
+export declare function boolOrErr(candidate: any, line: number, column: number): any;
+export declare function unaryOp(operator: UnaryOperator, argument: any, line: number, column: number): number | boolean | "string" | "number" | "bigint" | "boolean" | "symbol" | "undefined" | "object" | "function";
+export declare function evaluateUnaryExpression(operator: UnaryOperator, value: any): number | boolean | "string" | "number" | "bigint" | "boolean" | "symbol" | "undefined" | "object" | "function";
+export declare function binaryOp(operator: BinaryOperator, left: any, right: any, line: number, column: number): any;
+export declare function evaluateBinaryExpression(operator: BinaryOperator, left: any, right: any): any;
+export declare const setProp: (obj: any, prop: any, value: any, line: number, column: number) => any;
+export declare const getProp: (obj: any, prop: any, line: number, column: number) => any;

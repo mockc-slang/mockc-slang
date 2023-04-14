@@ -3,7 +3,6 @@ node_modules
 !docs/jsdoc/templates/**/*.js
 !docs/lib/**/*.js
 *.map
-dist/
 .idea/
 coverage/
 
