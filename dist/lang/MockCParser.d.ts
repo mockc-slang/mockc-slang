@@ -1,13 +1,13 @@
-import { ATN } from "antlr4ts/atn/ATN";
-import { FailedPredicateException } from "antlr4ts/FailedPredicateException";
-import { Parser } from "antlr4ts/Parser";
-import { ParserRuleContext } from "antlr4ts/ParserRuleContext";
-import { RuleContext } from "antlr4ts/RuleContext";
-import { TerminalNode } from "antlr4ts/tree/TerminalNode";
-import { TokenStream } from "antlr4ts/TokenStream";
-import { Vocabulary } from "antlr4ts/Vocabulary";
-import { MockCListener } from "./MockCListener";
-import { MockCVisitor } from "./MockCVisitor";
+import { ATN } from 'antlr4ts/atn/ATN';
+import { FailedPredicateException } from 'antlr4ts/FailedPredicateException';
+import { Parser } from 'antlr4ts/Parser';
+import { ParserRuleContext } from 'antlr4ts/ParserRuleContext';
+import { RuleContext } from 'antlr4ts/RuleContext';
+import { TokenStream } from 'antlr4ts/TokenStream';
+import { TerminalNode } from 'antlr4ts/tree/TerminalNode';
+import { Vocabulary } from 'antlr4ts/Vocabulary';
+import { MockCListener } from './MockCListener';
+import { MockCVisitor } from './MockCVisitor';
 export declare class MockCParser extends Parser {
     static readonly T__0 = 1;
     static readonly T__1 = 2;

@@ -1,7 +1,7 @@
-import { ATN } from "antlr4ts/atn/ATN";
-import { CharStream } from "antlr4ts/CharStream";
-import { Lexer } from "antlr4ts/Lexer";
-import { Vocabulary } from "antlr4ts/Vocabulary";
+import { ATN } from 'antlr4ts/atn/ATN';
+import { CharStream } from 'antlr4ts/CharStream';
+import { Lexer } from 'antlr4ts/Lexer';
+import { Vocabulary } from 'antlr4ts/Vocabulary';
 export declare class MockCLexer extends Lexer {
     static readonly T__0 = 1;
     static readonly T__1 = 2;
